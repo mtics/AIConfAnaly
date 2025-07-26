@@ -1,0 +1,22 @@
+name: ConfAnalysis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.13
+  - requests
+  - beautifulsoup4
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - nltk
+  - lxml
+  - tqdm
+  - pip
+  - pip:
+    - wordcloud
+    - plotly
+    - selenium
+    - webdriver-manager
