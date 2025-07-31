@@ -20,42 +20,64 @@ conda activate ConfAnalysis
 
 ### Main Commands
 ```bash
-# Full pipeline (scrape + analyze)
-python main.py
+# Full analysis pipeline (recommended)
+python main_new.py
 
-# Scraping only
-python main.py --scrape
-python main.py --scrape --conferences ICML NeuRIPS
-python main.py --scrape --years 2020 2021 2022
+# Or using module approach
+python -m conf_analysis.main
 
-# Analysis only
-python main.py --analyze
-python main.py --analyze --no-visualize
-python main.py --analyze --no-save
+# Generate comprehensive dashboard
+python -c "from conf_analysis.main import main; main()"
+```
 
-# Generate interactive dashboard
-python generate_dashboard.py
+### Cleanup and Maintenance
+```bash
+# Clean up redundant files (run once after reorganization)
+python tools/utilities/cleanup_project.py
 ```
 
 ## Architecture Overview
 
+### Final Optimized Structure
+
+```
+ConfAnalysis/
+├── conf_analysis/          # 🏗️ Core analysis system
+│   ├── core/              # Core components  
+│   │   ├── analyzer.py    # Enhanced analyzer (70+ scenarios, 25+ tech trends)
+│   │   ├── scrapers/      # Conference-specific scrapers
+│   │   ├── models/        # Data models
+│   │   ├── services/      # Business services
+│   │   ├── utils/         # Utility functions
+│   │   ├── database/      # Database modules
+│   │   └── embeddings/    # Vector encoding
+│   ├── docs/             # Project documentation
+│   └── main.py           # Main analysis program
+├── tools/                 # 🔧 Utility tools (organized)
+│   ├── utilities/         # Helper utilities
+│   ├── data_generators/   # Data generation scripts
+│   └── visualization_generators/  # Chart generators
+├── frontend/             # 🎨 Web interface (cleaned & optimized)
+│   ├── unified_analysis_dashboard.html  # ⭐ Main dashboard
+│   └── unified_analysis_report.html     # ⭐ Generated report
+├── outputs/              # 📊 Analysis results
+├── tests/               # 🧪 Test files
+├── main_new.py          # 🚪 Main entry point
+└── PROJECT_STRUCTURE.md # 📁 Structure documentation
+```
+
 ### Core Components
 
-**Scrapers (`scrapers/`)**
-- `base_scraper.py`: Abstract base class with common scraping functionality
-- Conference-specific scrapers inherit from BaseScraper and implement `get_papers_for_year()`
-- Each scraper handles different website structures and parsing patterns
-- Built-in rate limiting and error handling
+**Core Analysis (`conf_analysis/core/`)**
+- `analyzer.py`: UnifiedAnalyzer with enhanced field classification
+- `scrapers/`: Conference-specific scraping implementations
+- `models/`: Data models for papers and analysis results
+- `utils/`: Configuration, text processing, and database utilities
 
-**Analysis Pipeline (`analysis/`)**
-- `data_processor.py`: NLP processing, text cleaning, keyword extraction
-- `field_extractor.py`: Research field classification using predefined keywords and ML techniques
-- `visualizer.py`: Chart generation, word clouds, interactive dashboards
-
-**Configuration (`config.py`)**
-- Conference URLs, years, and scraping parameters
-- Data paths and analysis settings
-- Visualization configurations
+**Tools (`tools/`)**
+- `utilities/`: Legacy analyzer scripts and cleanup tools
+- `visualization_generators/`: Chart and dashboard generators
+- `data_generators/`: Data processing and analysis scripts
 
 ### Data Flow
 1. **Scraping**: Conference-specific scrapers extract paper metadata → JSON files in `data/raw/`

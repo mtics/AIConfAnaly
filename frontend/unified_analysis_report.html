@@ -1,0 +1,4779 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI论文深度分析 - 统一仪表板</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2c3e50;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        /* 关键指标概览 */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+            border-left: 4px solid #3498db;
+            transition: transform 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+        }
+
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 4px;
+        }
+
+        /* 主要分析区域 */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .chart-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .panel-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .chart-container {
+            height: 280px;
+        }
+
+        /* 详细分析标签 */
+        .detail-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .tabs-container {
+            display: flex;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #7f8c8d;
+        }
+
+        .tab-btn.active {
+            background: #3498db;
+            color: white;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            min-height: 300px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 统计列表样式 */
+        .stats-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .stat-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .tabs-container {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ecf0f1;
+            border-left: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 图表悬浮提示优化 */
+        .chart-tooltip {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border: 1px solid #ddd !important;
+            border-radius: 6px !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        }
+    </style>
+<script>
+                window.embeddedAnalysisData = {
+    "basic_statistics": {
+        "total_papers": 31244,
+        "year_range": [
+            2018,
+            2024
+        ],
+        "conferences": [
+            "AAAI",
+            "ICLR",
+            "NeuRIPS"
+        ],
+        "conference_counts": {
+            "NeuRIPS": 17526,
+            "ICLR": 13569,
+            "AAAI": 149
+        },
+        "yearly_counts": {
+            "2018": 1942,
+            "2019": 2846,
+            "2020": 4108,
+            "2021": 4927,
+            "2022": 5501,
+            "2023": 7378,
+            "2024": 4542
+        },
+        "avg_title_length": 68.62280757905518,
+        "avg_abstract_length": 1238.1691844834208,
+        "papers_per_year_avg": 4463.428571428572
+    },
+    "temporal_analysis": {
+        "yearly_paper_counts": {
+            "2018": 1942,
+            "2019": 2846,
+            "2020": 4108,
+            "2021": 4927,
+            "2022": 5501,
+            "2023": 7378,
+            "2024": 4542
+        },
+        "yearly_growth_rates": {
+            "2018": 0.0,
+            "2019": 0.4654994850669414,
+            "2020": 0.4434293745607871,
+            "2021": 0.1993670886075949,
+            "2022": 0.11650091333468637,
+            "2023": 0.34121068896564255,
+            "2024": -0.3843860124695039
+        },
+        "conference_yearly_distribution": {
+            "2018": {
+                "AAAI": 0,
+                "ICLR": 934,
+                "NeuRIPS": 1008
+            },
+            "2019": {
+                "AAAI": 0,
+                "ICLR": 1419,
+                "NeuRIPS": 1427
+            },
+            "2020": {
+                "AAAI": 0,
+                "ICLR": 2212,
+                "NeuRIPS": 1896
+            },
+            "2021": {
+                "AAAI": 0,
+                "ICLR": 2594,
+                "NeuRIPS": 2333
+            },
+            "2022": {
+                "AAAI": 50,
+                "ICLR": 2617,
+                "NeuRIPS": 2834
+            },
+            "2023": {
+                "AAAI": 50,
+                "ICLR": 3793,
+                "NeuRIPS": 3535
+            },
+            "2024": {
+                "AAAI": 49,
+                "ICLR": 0,
+                "NeuRIPS": 4493
+            }
+        },
+        "peak_year": 2023,
+        "peak_count": 7378,
+        "total_growth_rate": 133.88259526261587
+    },
+    "conference_analysis": {
+        "conference_statistics": {
+            "AAAI": {
+                "paper_count": 149,
+                "first_year": 2022,
+                "last_year": 2024,
+                "active_years": 3,
+                "avg_abstract_length": 1306.71,
+                "influence_score": 0.1765295642392527
+            },
+            "ICLR": {
+                "paper_count": 13569,
+                "first_year": 2018,
+                "last_year": 2023,
+                "active_years": 6,
+                "avg_abstract_length": 1210.36,
+                "influence_score": 0.8073898371399227
+            },
+            "NeuRIPS": {
+                "paper_count": 17526,
+                "first_year": 2018,
+                "last_year": 2024,
+                "active_years": 7,
+                "avg_abstract_length": 1259.12,
+                "influence_score": 1.0
+            }
+        },
+        "top_conferences": [
+            "NeuRIPS",
+            "ICLR",
+            "AAAI"
+        ],
+        "most_consistent": [
+            "NeuRIPS",
+            "ICLR",
+            "AAAI"
+        ],
+        "conference_rankings": {
+            "NeuRIPS": {
+                "paper_count": 17526,
+                "first_year": 2018,
+                "last_year": 2024,
+                "active_years": 7,
+                "avg_abstract_length": 1259.12,
+                "influence_score": 1.0
+            },
+            "ICLR": {
+                "paper_count": 13569,
+                "first_year": 2018,
+                "last_year": 2023,
+                "active_years": 6,
+                "avg_abstract_length": 1210.36,
+                "influence_score": 0.8073898371399227
+            },
+            "AAAI": {
+                "paper_count": 149,
+                "first_year": 2022,
+                "last_year": 2024,
+                "active_years": 3,
+                "avg_abstract_length": 1306.71,
+                "influence_score": 0.1765295642392527
+            }
+        }
+    },
+    "task_scenario_analysis": {
+        "scenario_distribution": {
+            "General Research": 24443,
+            "Digital Payments & Blockchain": 2379,
+            "Privacy Protection": 819,
+            "Language Learning & Translation": 670,
+            "Drug Discovery & Molecular Design": 409,
+            "Fraud Detection & AML": 381,
+            "Recommendation Systems": 310,
+            "Autonomous Vehicle Control": 258,
+            "Medical Imaging & Radiology": 250,
+            "Video & Image Production": 233,
+            "Social Media Analytics": 145,
+            "Clinical Diagnosis & Decision Support": 99,
+            "Genomics & Precision Medicine": 88,
+            "Adaptive Learning Systems": 63,
+            "Risk Management & Compliance": 57,
+            "Mental Health & Neuropsychology": 55,
+            "Smart Transportation Infrastructure": 46,
+            "E-commerce & Retail Analytics": 35,
+            "Music & Audio Creation": 33,
+            "Industrial Automation": 32,
+            "Smart Building & IoT": 32,
+            "Human-Computer Interaction": 31,
+            "Creative Content Generation": 31,
+            "Special Needs & Accessibility": 28,
+            "Virtual & Augmented Reality": 25,
+            "Advanced Driver Assistance": 23,
+            "Cybersecurity & Threat Detection": 23,
+            "Traffic Flow Optimization": 23,
+            "Epidemiology & Public Health": 21,
+            "Misinformation Detection": 18,
+            "Game AI & Interactive Entertainment": 16,
+            "Supply Chain Optimization": 15,
+            "Scientific Discovery & Research": 14,
+            "Environmental Monitoring & Climate": 13,
+            "Smart Energy & Grid Management": 12,
+            "Robo-Advisory & Wealth Management": 12,
+            "Sports Analytics": 11,
+            "Materials Science": 11,
+            "Vehicle Safety & Monitoring": 10,
+            "Telemedicine & Remote Healthcare": 10,
+            "Educational Assessment & Analytics": 10,
+            "Educational Content & Curriculum": 9,
+            "Smart City Infrastructure": 7,
+            "Logistics & Supply Chain": 6,
+            "Climate & Earth Sciences": 6,
+            "Waste Management & Circular Economy": 4,
+            "Urban Mobility & Public Transport": 3,
+            "Predictive Maintenance": 3,
+            "Medical Robotics & Surgery": 3,
+            "Credit Scoring & Underwriting": 3,
+            "Precision Agriculture": 2,
+            "Inventory Management": 2,
+            "Algorithmic Trading & HFT": 1,
+            "Food Safety & Quality": 1
+        },
+        "task_type_distribution": {
+            "Regression & Prediction": 6549,
+            "Optimization & Search": 3915,
+            "Classification & Recognition": 3846,
+            "Content Generation": 3617,
+            "Understanding & Interpretation": 2462,
+            "Decision Making": 2417,
+            "Other Tasks": 1827,
+            "Clustering & Segmentation": 1461,
+            "Robustness & Safety": 1260,
+            "Resource Allocation": 1200,
+            "Transfer Learning": 544,
+            "Privacy-Preserving": 511,
+            "Style Transfer": 470,
+            "Recommendation": 357,
+            "Data Augmentation": 294,
+            "Conversational AI": 183,
+            "Knowledge Extraction": 177,
+            "Multimodal Learning": 105,
+            "Anomaly Detection": 49
+        },
+        "scenario_task_cross_table": {
+            "Anomaly Detection": {
+                "Adaptive Learning Systems": 0,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 0,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 1,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 0,
+                "Digital Payments & Blockchain": 5,
+                "Drug Discovery & Molecular Design": 0,
+                "E-commerce & Retail Analytics": 0,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 0,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 38,
+                "Genomics & Precision Medicine": 0,
+                "Human-Computer Interaction": 0,
+                "Industrial Automation": 1,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 0,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 0,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 0,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 2,
+                "Recommendation Systems": 1,
+                "Risk Management & Compliance": 0,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 0,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 0,
+                "Social Media Analytics": 1,
+                "Special Needs & Accessibility": 0,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 0,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Classification & Recognition": {
+                "Adaptive Learning Systems": 3,
+                "Advanced Driver Assistance": 4,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 44,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 15,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 11,
+                "Digital Payments & Blockchain": 292,
+                "Drug Discovery & Molecular Design": 25,
+                "E-commerce & Retail Analytics": 4,
+                "Educational Assessment & Analytics": 2,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 54,
+                "Game AI & Interactive Entertainment": 1,
+                "General Research": 3094,
+                "Genomics & Precision Medicine": 18,
+                "Human-Computer Interaction": 2,
+                "Industrial Automation": 8,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 83,
+                "Logistics & Supply Chain": 1,
+                "Materials Science": 2,
+                "Medical Imaging & Radiology": 30,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 6,
+                "Misinformation Detection": 3,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 1,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 55,
+                "Recommendation Systems": 10,
+                "Risk Management & Compliance": 8,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 4,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 2,
+                "Smart Transportation Infrastructure": 9,
+                "Social Media Analytics": 32,
+                "Special Needs & Accessibility": 6,
+                "Sports Analytics": 3,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 1,
+                "Video & Image Production": 9,
+                "Virtual & Augmented Reality": 4,
+                "Waste Management & Circular Economy": 0
+            },
+            "Clustering & Segmentation": {
+                "Adaptive Learning Systems": 4,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 11,
+                "Climate & Earth Sciences": 1,
+                "Clinical Diagnosis & Decision Support": 1,
+                "Creative Content Generation": 1,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 1,
+                "Digital Payments & Blockchain": 119,
+                "Drug Discovery & Molecular Design": 6,
+                "E-commerce & Retail Analytics": 0,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 1,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 17,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 1136,
+                "Genomics & Precision Medicine": 7,
+                "Human-Computer Interaction": 1,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 55,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 1,
+                "Medical Imaging & Radiology": 35,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 5,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 21,
+                "Recommendation Systems": 8,
+                "Risk Management & Compliance": 3,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 1,
+                "Smart Building & IoT": 1,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 0,
+                "Social Media Analytics": 13,
+                "Special Needs & Accessibility": 0,
+                "Sports Analytics": 2,
+                "Supply Chain Optimization": 1,
+                "Telemedicine & Remote Healthcare": 1,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 7,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 1
+            },
+            "Content Generation": {
+                "Adaptive Learning Systems": 2,
+                "Advanced Driver Assistance": 3,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 22,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 11,
+                "Creative Content Generation": 18,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 2,
+                "Digital Payments & Blockchain": 286,
+                "Drug Discovery & Molecular Design": 86,
+                "E-commerce & Retail Analytics": 6,
+                "Educational Assessment & Analytics": 1,
+                "Educational Content & Curriculum": 1,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 1,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 53,
+                "Game AI & Interactive Entertainment": 4,
+                "General Research": 2597,
+                "Genomics & Precision Medicine": 7,
+                "Human-Computer Interaction": 8,
+                "Industrial Automation": 2,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 136,
+                "Logistics & Supply Chain": 2,
+                "Materials Science": 1,
+                "Medical Imaging & Radiology": 21,
+                "Medical Robotics & Surgery": 1,
+                "Mental Health & Neuropsychology": 6,
+                "Misinformation Detection": 7,
+                "Music & Audio Creation": 32,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 63,
+                "Recommendation Systems": 15,
+                "Risk Management & Compliance": 5,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 5,
+                "Smart City Infrastructure": 1,
+                "Smart Energy & Grid Management": 2,
+                "Smart Transportation Infrastructure": 5,
+                "Social Media Analytics": 10,
+                "Special Needs & Accessibility": 8,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 1,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 1,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 172,
+                "Virtual & Augmented Reality": 13,
+                "Waste Management & Circular Economy": 0
+            },
+            "Conversational AI": {
+                "Adaptive Learning Systems": 0,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 0,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 3,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 0,
+                "Digital Payments & Blockchain": 14,
+                "Drug Discovery & Molecular Design": 3,
+                "E-commerce & Retail Analytics": 0,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 3,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 148,
+                "Genomics & Precision Medicine": 1,
+                "Human-Computer Interaction": 1,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 5,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 1,
+                "Medical Imaging & Radiology": 1,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 0,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 1,
+                "Recommendation Systems": 0,
+                "Risk Management & Compliance": 1,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 0,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 0,
+                "Social Media Analytics": 1,
+                "Special Needs & Accessibility": 0,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 0,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Data Augmentation": {
+                "Adaptive Learning Systems": 2,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 0,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 0,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 0,
+                "Digital Payments & Blockchain": 26,
+                "Drug Discovery & Molecular Design": 2,
+                "E-commerce & Retail Analytics": 0,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 3,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 232,
+                "Genomics & Precision Medicine": 1,
+                "Human-Computer Interaction": 0,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 8,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 4,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 1,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 8,
+                "Recommendation Systems": 2,
+                "Risk Management & Compliance": 1,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 0,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 0,
+                "Social Media Analytics": 0,
+                "Special Needs & Accessibility": 1,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 1,
+                "Vehicle Safety & Monitoring": 1,
+                "Video & Image Production": 1,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Decision Making": {
+                "Adaptive Learning Systems": 3,
+                "Advanced Driver Assistance": 3,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 24,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 10,
+                "Creative Content Generation": 1,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 0,
+                "Digital Payments & Blockchain": 154,
+                "Drug Discovery & Molecular Design": 19,
+                "E-commerce & Retail Analytics": 5,
+                "Educational Assessment & Analytics": 1,
+                "Educational Content & Curriculum": 2,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 3,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 28,
+                "Game AI & Interactive Entertainment": 4,
+                "General Research": 2065,
+                "Genomics & Precision Medicine": 5,
+                "Human-Computer Interaction": 2,
+                "Industrial Automation": 5,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 3,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 4,
+                "Medical Robotics & Surgery": 1,
+                "Mental Health & Neuropsychology": 12,
+                "Misinformation Detection": 1,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 14,
+                "Recommendation Systems": 13,
+                "Risk Management & Compliance": 8,
+                "Robo-Advisory & Wealth Management": 1,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 1,
+                "Smart City Infrastructure": 1,
+                "Smart Energy & Grid Management": 2,
+                "Smart Transportation Infrastructure": 4,
+                "Social Media Analytics": 2,
+                "Special Needs & Accessibility": 2,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 8,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 4,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 1,
+                "Video & Image Production": 0,
+                "Virtual & Augmented Reality": 1,
+                "Waste Management & Circular Economy": 0
+            },
+            "Knowledge Extraction": {
+                "Adaptive Learning Systems": 1,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 0,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 1,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 1,
+                "Digital Payments & Blockchain": 12,
+                "Drug Discovery & Molecular Design": 9,
+                "E-commerce & Retail Analytics": 0,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 1,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 139,
+                "Genomics & Precision Medicine": 0,
+                "Human-Computer Interaction": 0,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 1,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 2,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 0,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 5,
+                "Recommendation Systems": 0,
+                "Risk Management & Compliance": 3,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 0,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 0,
+                "Social Media Analytics": 0,
+                "Special Needs & Accessibility": 1,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 1,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Multimodal Learning": {
+                "Adaptive Learning Systems": 0,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 0,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 0,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 0,
+                "Digital Payments & Blockchain": 6,
+                "Drug Discovery & Molecular Design": 2,
+                "E-commerce & Retail Analytics": 0,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 2,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 90,
+                "Genomics & Precision Medicine": 1,
+                "Human-Computer Interaction": 0,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 0,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 1,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 0,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 0,
+                "Recommendation Systems": 0,
+                "Risk Management & Compliance": 0,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 0,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 1,
+                "Social Media Analytics": 1,
+                "Special Needs & Accessibility": 0,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 1,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Optimization & Search": {
+                "Adaptive Learning Systems": 25,
+                "Advanced Driver Assistance": 7,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 35,
+                "Climate & Earth Sciences": 1,
+                "Clinical Diagnosis & Decision Support": 6,
+                "Creative Content Generation": 4,
+                "Credit Scoring & Underwriting": 1,
+                "Cybersecurity & Threat Detection": 1,
+                "Digital Payments & Blockchain": 299,
+                "Drug Discovery & Molecular Design": 51,
+                "E-commerce & Retail Analytics": 1,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 3,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 2,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 53,
+                "Game AI & Interactive Entertainment": 2,
+                "General Research": 3236,
+                "Genomics & Precision Medicine": 5,
+                "Human-Computer Interaction": 4,
+                "Industrial Automation": 9,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 21,
+                "Logistics & Supply Chain": 2,
+                "Materials Science": 1,
+                "Medical Imaging & Radiology": 13,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 5,
+                "Misinformation Detection": 1,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 1,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 42,
+                "Recommendation Systems": 23,
+                "Risk Management & Compliance": 6,
+                "Robo-Advisory & Wealth Management": 6,
+                "Scientific Discovery & Research": 2,
+                "Smart Building & IoT": 4,
+                "Smart City Infrastructure": 2,
+                "Smart Energy & Grid Management": 2,
+                "Smart Transportation Infrastructure": 12,
+                "Social Media Analytics": 13,
+                "Special Needs & Accessibility": 2,
+                "Sports Analytics": 1,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 1,
+                "Traffic Flow Optimization": 3,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 5,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 2
+            },
+            "Other Tasks": {
+                "Adaptive Learning Systems": 3,
+                "Advanced Driver Assistance": 1,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 7,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 0,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 0,
+                "Digital Payments & Blockchain": 131,
+                "Drug Discovery & Molecular Design": 11,
+                "E-commerce & Retail Analytics": 1,
+                "Educational Assessment & Analytics": 2,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 2,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 10,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 1601,
+                "Genomics & Precision Medicine": 2,
+                "Human-Computer Interaction": 3,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 3,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 2,
+                "Medical Imaging & Radiology": 18,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 1,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 1,
+                "Recommendation Systems": 0,
+                "Risk Management & Compliance": 1,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 12,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 2,
+                "Social Media Analytics": 7,
+                "Special Needs & Accessibility": 2,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 1,
+                "Traffic Flow Optimization": 1,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 2,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Privacy-Preserving": {
+                "Adaptive Learning Systems": 2,
+                "Advanced Driver Assistance": 1,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 1,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 1,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 0,
+                "Digital Payments & Blockchain": 9,
+                "Drug Discovery & Molecular Design": 0,
+                "E-commerce & Retail Analytics": 0,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 3,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 57,
+                "Genomics & Precision Medicine": 0,
+                "Human-Computer Interaction": 0,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 2,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 3,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 1,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 1,
+                "Privacy Protection": 428,
+                "Recommendation Systems": 0,
+                "Risk Management & Compliance": 2,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 0,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 0,
+                "Social Media Analytics": 0,
+                "Special Needs & Accessibility": 0,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 0,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Recommendation": {
+                "Adaptive Learning Systems": 2,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 0,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 1,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 0,
+                "Digital Payments & Blockchain": 30,
+                "Drug Discovery & Molecular Design": 1,
+                "E-commerce & Retail Analytics": 0,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 1,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 4,
+                "Game AI & Interactive Entertainment": 1,
+                "General Research": 126,
+                "Genomics & Precision Medicine": 2,
+                "Human-Computer Interaction": 0,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 1,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 3,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 1,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 10,
+                "Recommendation Systems": 161,
+                "Risk Management & Compliance": 0,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 0,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 0,
+                "Social Media Analytics": 11,
+                "Special Needs & Accessibility": 0,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 1,
+                "Traffic Flow Optimization": 1,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 0,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Regression & Prediction": {
+                "Adaptive Learning Systems": 10,
+                "Advanced Driver Assistance": 3,
+                "Algorithmic Trading & HFT": 1,
+                "Autonomous Vehicle Control": 74,
+                "Climate & Earth Sciences": 2,
+                "Clinical Diagnosis & Decision Support": 28,
+                "Creative Content Generation": 4,
+                "Credit Scoring & Underwriting": 1,
+                "Cybersecurity & Threat Detection": 1,
+                "Digital Payments & Blockchain": 494,
+                "Drug Discovery & Molecular Design": 151,
+                "E-commerce & Retail Analytics": 13,
+                "Educational Assessment & Analytics": 3,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 12,
+                "Epidemiology & Public Health": 9,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 69,
+                "Game AI & Interactive Entertainment": 1,
+                "General Research": 5181,
+                "Genomics & Precision Medicine": 33,
+                "Human-Computer Interaction": 6,
+                "Industrial Automation": 4,
+                "Inventory Management": 2,
+                "Language Learning & Translation": 101,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 2,
+                "Medical Imaging & Radiology": 73,
+                "Medical Robotics & Surgery": 1,
+                "Mental Health & Neuropsychology": 7,
+                "Misinformation Detection": 2,
+                "Music & Audio Creation": 1,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 2,
+                "Privacy Protection": 88,
+                "Recommendation Systems": 50,
+                "Risk Management & Compliance": 14,
+                "Robo-Advisory & Wealth Management": 4,
+                "Scientific Discovery & Research": 7,
+                "Smart Building & IoT": 1,
+                "Smart City Infrastructure": 3,
+                "Smart Energy & Grid Management": 3,
+                "Smart Transportation Infrastructure": 6,
+                "Social Media Analytics": 28,
+                "Special Needs & Accessibility": 1,
+                "Sports Analytics": 4,
+                "Supply Chain Optimization": 1,
+                "Telemedicine & Remote Healthcare": 5,
+                "Traffic Flow Optimization": 12,
+                "Urban Mobility & Public Transport": 1,
+                "Vehicle Safety & Monitoring": 3,
+                "Video & Image Production": 23,
+                "Virtual & Augmented Reality": 3,
+                "Waste Management & Circular Economy": 1
+            },
+            "Resource Allocation": {
+                "Adaptive Learning Systems": 1,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 2,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 1,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 1,
+                "Digital Payments & Blockchain": 131,
+                "Drug Discovery & Molecular Design": 8,
+                "E-commerce & Retail Analytics": 2,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 1,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 1,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 12,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 985,
+                "Genomics & Precision Medicine": 2,
+                "Human-Computer Interaction": 0,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 6,
+                "Logistics & Supply Chain": 1,
+                "Materials Science": 1,
+                "Medical Imaging & Radiology": 3,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 0,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 23,
+                "Recommendation Systems": 5,
+                "Risk Management & Compliance": 0,
+                "Robo-Advisory & Wealth Management": 1,
+                "Scientific Discovery & Research": 1,
+                "Smart Building & IoT": 1,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 2,
+                "Social Media Analytics": 3,
+                "Special Needs & Accessibility": 1,
+                "Sports Analytics": 1,
+                "Supply Chain Optimization": 1,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 3,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Robustness & Safety": {
+                "Adaptive Learning Systems": 1,
+                "Advanced Driver Assistance": 1,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 20,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 3,
+                "Creative Content Generation": 1,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 3,
+                "Digital Payments & Blockchain": 85,
+                "Drug Discovery & Molecular Design": 5,
+                "E-commerce & Retail Analytics": 0,
+                "Educational Assessment & Analytics": 1,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 11,
+                "Game AI & Interactive Entertainment": 2,
+                "General Research": 1078,
+                "Genomics & Precision Medicine": 0,
+                "Human-Computer Interaction": 1,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 8,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 7,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 1,
+                "Misinformation Detection": 1,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 17,
+                "Recommendation Systems": 3,
+                "Risk Management & Compliance": 2,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 0,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 0,
+                "Social Media Analytics": 6,
+                "Special Needs & Accessibility": 0,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 1,
+                "Video & Image Production": 2,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Style Transfer": {
+                "Adaptive Learning Systems": 0,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 4,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 1,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 0,
+                "Digital Payments & Blockchain": 44,
+                "Drug Discovery & Molecular Design": 6,
+                "E-commerce & Retail Analytics": 0,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 2,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 221,
+                "Genomics & Precision Medicine": 1,
+                "Human-Computer Interaction": 0,
+                "Industrial Automation": 0,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 179,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 6,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 0,
+                "Misinformation Detection": 0,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 2,
+                "Recommendation Systems": 1,
+                "Risk Management & Compliance": 0,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 0,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 0,
+                "Social Media Analytics": 0,
+                "Special Needs & Accessibility": 1,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 0,
+                "Telemedicine & Remote Healthcare": 1,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 0,
+                "Video & Image Production": 1,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Transfer Learning": {
+                "Adaptive Learning Systems": 1,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 2,
+                "Climate & Earth Sciences": 0,
+                "Clinical Diagnosis & Decision Support": 0,
+                "Creative Content Generation": 0,
+                "Credit Scoring & Underwriting": 0,
+                "Cybersecurity & Threat Detection": 0,
+                "Digital Payments & Blockchain": 34,
+                "Drug Discovery & Molecular Design": 4,
+                "E-commerce & Retail Analytics": 1,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 1,
+                "Environmental Monitoring & Climate": 0,
+                "Epidemiology & Public Health": 0,
+                "Food Safety & Quality": 0,
+                "Fraud Detection & AML": 35,
+                "Game AI & Interactive Entertainment": 0,
+                "General Research": 426,
+                "Genomics & Precision Medicine": 1,
+                "Human-Computer Interaction": 0,
+                "Industrial Automation": 1,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 9,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 4,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 0,
+                "Misinformation Detection": 1,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 14,
+                "Recommendation Systems": 3,
+                "Risk Management & Compliance": 0,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 0,
+                "Smart Building & IoT": 0,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 1,
+                "Smart Transportation Infrastructure": 1,
+                "Social Media Analytics": 1,
+                "Special Needs & Accessibility": 1,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 1,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 0,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 1,
+                "Video & Image Production": 1,
+                "Virtual & Augmented Reality": 0,
+                "Waste Management & Circular Economy": 0
+            },
+            "Understanding & Interpretation": {
+                "Adaptive Learning Systems": 3,
+                "Advanced Driver Assistance": 0,
+                "Algorithmic Trading & HFT": 0,
+                "Autonomous Vehicle Control": 12,
+                "Climate & Earth Sciences": 2,
+                "Clinical Diagnosis & Decision Support": 16,
+                "Creative Content Generation": 2,
+                "Credit Scoring & Underwriting": 1,
+                "Cybersecurity & Threat Detection": 2,
+                "Digital Payments & Blockchain": 208,
+                "Drug Discovery & Molecular Design": 20,
+                "E-commerce & Retail Analytics": 2,
+                "Educational Assessment & Analytics": 0,
+                "Educational Content & Curriculum": 0,
+                "Environmental Monitoring & Climate": 1,
+                "Epidemiology & Public Health": 2,
+                "Food Safety & Quality": 1,
+                "Fraud Detection & AML": 21,
+                "Game AI & Interactive Entertainment": 1,
+                "General Research": 1993,
+                "Genomics & Precision Medicine": 2,
+                "Human-Computer Interaction": 3,
+                "Industrial Automation": 2,
+                "Inventory Management": 0,
+                "Language Learning & Translation": 49,
+                "Logistics & Supply Chain": 0,
+                "Materials Science": 0,
+                "Medical Imaging & Radiology": 22,
+                "Medical Robotics & Surgery": 0,
+                "Mental Health & Neuropsychology": 9,
+                "Misinformation Detection": 2,
+                "Music & Audio Creation": 0,
+                "Precision Agriculture": 0,
+                "Predictive Maintenance": 0,
+                "Privacy Protection": 25,
+                "Recommendation Systems": 15,
+                "Risk Management & Compliance": 3,
+                "Robo-Advisory & Wealth Management": 0,
+                "Scientific Discovery & Research": 3,
+                "Smart Building & IoT": 3,
+                "Smart City Infrastructure": 0,
+                "Smart Energy & Grid Management": 0,
+                "Smart Transportation Infrastructure": 4,
+                "Social Media Analytics": 16,
+                "Special Needs & Accessibility": 2,
+                "Sports Analytics": 0,
+                "Supply Chain Optimization": 2,
+                "Telemedicine & Remote Healthcare": 0,
+                "Traffic Flow Optimization": 2,
+                "Urban Mobility & Public Transport": 0,
+                "Vehicle Safety & Monitoring": 2,
+                "Video & Image Production": 5,
+                "Virtual & Augmented Reality": 4,
+                "Waste Management & Circular Economy": 0
+            }
+        },
+        "confidence_statistics": {
+            "('scenario_confidence', 'mean')": {
+                "Adaptive Learning Systems": 0.1,
+                "Advanced Driver Assistance": 0.1,
+                "Algorithmic Trading & HFT": 0.1,
+                "Autonomous Vehicle Control": 0.106,
+                "Climate & Earth Sciences": 0.1,
+                "Clinical Diagnosis & Decision Support": 0.1,
+                "Creative Content Generation": 0.103,
+                "Credit Scoring & Underwriting": 0.1,
+                "Cybersecurity & Threat Detection": 0.109,
+                "Digital Payments & Blockchain": 0.1,
+                "Drug Discovery & Molecular Design": 0.125,
+                "E-commerce & Retail Analytics": 0.1,
+                "Educational Assessment & Analytics": 0.11,
+                "Educational Content & Curriculum": 0.1,
+                "Environmental Monitoring & Climate": 0.1,
+                "Epidemiology & Public Health": 0.1,
+                "Food Safety & Quality": 0.1,
+                "Fraud Detection & AML": 0.101,
+                "Game AI & Interactive Entertainment": 0.1,
+                "General Research": 0.0,
+                "Genomics & Precision Medicine": 0.103,
+                "Human-Computer Interaction": 0.106,
+                "Industrial Automation": 0.103,
+                "Inventory Management": 0.1,
+                "Language Learning & Translation": 0.1,
+                "Logistics & Supply Chain": 0.1,
+                "Materials Science": 0.109,
+                "Medical Imaging & Radiology": 0.112,
+                "Medical Robotics & Surgery": 0.1,
+                "Mental Health & Neuropsychology": 0.105,
+                "Misinformation Detection": 0.117,
+                "Music & Audio Creation": 0.103,
+                "Precision Agriculture": 0.1,
+                "Predictive Maintenance": 0.1,
+                "Privacy Protection": 0.139,
+                "Recommendation Systems": 0.108,
+                "Risk Management & Compliance": 0.102,
+                "Robo-Advisory & Wealth Management": 0.1,
+                "Scientific Discovery & Research": 0.107,
+                "Smart Building & IoT": 0.1,
+                "Smart City Infrastructure": 0.1,
+                "Smart Energy & Grid Management": 0.108,
+                "Smart Transportation Infrastructure": 0.1,
+                "Social Media Analytics": 0.106,
+                "Special Needs & Accessibility": 0.1,
+                "Sports Analytics": 0.1,
+                "Supply Chain Optimization": 0.1,
+                "Telemedicine & Remote Healthcare": 0.1,
+                "Traffic Flow Optimization": 0.113,
+                "Urban Mobility & Public Transport": 0.1,
+                "Vehicle Safety & Monitoring": 0.1,
+                "Video & Image Production": 0.104,
+                "Virtual & Augmented Reality": 0.124,
+                "Waste Management & Circular Economy": 0.1
+            },
+            "('scenario_confidence', 'std')": {
+                "Adaptive Learning Systems": 0.0,
+                "Advanced Driver Assistance": 0.0,
+                "Algorithmic Trading & HFT": NaN,
+                "Autonomous Vehicle Control": 0.024,
+                "Climate & Earth Sciences": 0.0,
+                "Clinical Diagnosis & Decision Support": 0.0,
+                "Creative Content Generation": 0.018,
+                "Credit Scoring & Underwriting": 0.0,
+                "Cybersecurity & Threat Detection": 0.029,
+                "Digital Payments & Blockchain": 0.002,
+                "Drug Discovery & Molecular Design": 0.055,
+                "E-commerce & Retail Analytics": 0.0,
+                "Educational Assessment & Analytics": 0.032,
+                "Educational Content & Curriculum": 0.0,
+                "Environmental Monitoring & Climate": 0.0,
+                "Epidemiology & Public Health": 0.0,
+                "Food Safety & Quality": NaN,
+                "Fraud Detection & AML": 0.009,
+                "Game AI & Interactive Entertainment": 0.0,
+                "General Research": 0.0,
+                "Genomics & Precision Medicine": 0.018,
+                "Human-Computer Interaction": 0.025,
+                "Industrial Automation": 0.018,
+                "Inventory Management": 0.0,
+                "Language Learning & Translation": 0.005,
+                "Logistics & Supply Chain": 0.0,
+                "Materials Science": 0.03,
+                "Medical Imaging & Radiology": 0.038,
+                "Medical Robotics & Surgery": 0.0,
+                "Mental Health & Neuropsychology": 0.023,
+                "Misinformation Detection": 0.038,
+                "Music & Audio Creation": 0.017,
+                "Precision Agriculture": 0.0,
+                "Predictive Maintenance": 0.0,
+                "Privacy Protection": 0.049,
+                "Recommendation Systems": 0.028,
+                "Risk Management & Compliance": 0.013,
+                "Robo-Advisory & Wealth Management": 0.0,
+                "Scientific Discovery & Research": 0.027,
+                "Smart Building & IoT": 0.0,
+                "Smart City Infrastructure": 0.0,
+                "Smart Energy & Grid Management": 0.029,
+                "Smart Transportation Infrastructure": 0.0,
+                "Social Media Analytics": 0.023,
+                "Special Needs & Accessibility": 0.0,
+                "Sports Analytics": 0.0,
+                "Supply Chain Optimization": 0.0,
+                "Telemedicine & Remote Healthcare": 0.0,
+                "Traffic Flow Optimization": 0.034,
+                "Urban Mobility & Public Transport": 0.0,
+                "Vehicle Safety & Monitoring": 0.0,
+                "Video & Image Production": 0.021,
+                "Virtual & Augmented Reality": 0.052,
+                "Waste Management & Circular Economy": 0.0
+            },
+            "('scenario_confidence', 'min')": {
+                "Adaptive Learning Systems": 0.1,
+                "Advanced Driver Assistance": 0.1,
+                "Algorithmic Trading & HFT": 0.1,
+                "Autonomous Vehicle Control": 0.1,
+                "Climate & Earth Sciences": 0.1,
+                "Clinical Diagnosis & Decision Support": 0.1,
+                "Creative Content Generation": 0.1,
+                "Credit Scoring & Underwriting": 0.1,
+                "Cybersecurity & Threat Detection": 0.1,
+                "Digital Payments & Blockchain": 0.1,
+                "Drug Discovery & Molecular Design": 0.1,
+                "E-commerce & Retail Analytics": 0.1,
+                "Educational Assessment & Analytics": 0.1,
+                "Educational Content & Curriculum": 0.1,
+                "Environmental Monitoring & Climate": 0.1,
+                "Epidemiology & Public Health": 0.1,
+                "Food Safety & Quality": 0.1,
+                "Fraud Detection & AML": 0.1,
+                "Game AI & Interactive Entertainment": 0.1,
+                "General Research": 0.0,
+                "Genomics & Precision Medicine": 0.1,
+                "Human-Computer Interaction": 0.1,
+                "Industrial Automation": 0.1,
+                "Inventory Management": 0.1,
+                "Language Learning & Translation": 0.1,
+                "Logistics & Supply Chain": 0.1,
+                "Materials Science": 0.1,
+                "Medical Imaging & Radiology": 0.1,
+                "Medical Robotics & Surgery": 0.1,
+                "Mental Health & Neuropsychology": 0.1,
+                "Misinformation Detection": 0.1,
+                "Music & Audio Creation": 0.1,
+                "Precision Agriculture": 0.1,
+                "Predictive Maintenance": 0.1,
+                "Privacy Protection": 0.1,
+                "Recommendation Systems": 0.1,
+                "Risk Management & Compliance": 0.1,
+                "Robo-Advisory & Wealth Management": 0.1,
+                "Scientific Discovery & Research": 0.1,
+                "Smart Building & IoT": 0.1,
+                "Smart City Infrastructure": 0.1,
+                "Smart Energy & Grid Management": 0.1,
+                "Smart Transportation Infrastructure": 0.1,
+                "Social Media Analytics": 0.1,
+                "Special Needs & Accessibility": 0.1,
+                "Sports Analytics": 0.1,
+                "Supply Chain Optimization": 0.1,
+                "Telemedicine & Remote Healthcare": 0.1,
+                "Traffic Flow Optimization": 0.1,
+                "Urban Mobility & Public Transport": 0.1,
+                "Vehicle Safety & Monitoring": 0.1,
+                "Video & Image Production": 0.1,
+                "Virtual & Augmented Reality": 0.1,
+                "Waste Management & Circular Economy": 0.1
+            },
+            "('scenario_confidence', 'max')": {
+                "Adaptive Learning Systems": 0.1,
+                "Advanced Driver Assistance": 0.1,
+                "Algorithmic Trading & HFT": 0.1,
+                "Autonomous Vehicle Control": 0.2,
+                "Climate & Earth Sciences": 0.1,
+                "Clinical Diagnosis & Decision Support": 0.1,
+                "Creative Content Generation": 0.2,
+                "Credit Scoring & Underwriting": 0.1,
+                "Cybersecurity & Threat Detection": 0.2,
+                "Digital Payments & Blockchain": 0.2,
+                "Drug Discovery & Molecular Design": 0.4,
+                "E-commerce & Retail Analytics": 0.1,
+                "Educational Assessment & Analytics": 0.2,
+                "Educational Content & Curriculum": 0.1,
+                "Environmental Monitoring & Climate": 0.1,
+                "Epidemiology & Public Health": 0.1,
+                "Food Safety & Quality": 0.1,
+                "Fraud Detection & AML": 0.2,
+                "Game AI & Interactive Entertainment": 0.1,
+                "General Research": 0.0,
+                "Genomics & Precision Medicine": 0.2,
+                "Human-Computer Interaction": 0.2,
+                "Industrial Automation": 0.2,
+                "Inventory Management": 0.1,
+                "Language Learning & Translation": 0.2,
+                "Logistics & Supply Chain": 0.1,
+                "Materials Science": 0.2,
+                "Medical Imaging & Radiology": 0.4,
+                "Medical Robotics & Surgery": 0.1,
+                "Mental Health & Neuropsychology": 0.2,
+                "Misinformation Detection": 0.2,
+                "Music & Audio Creation": 0.2,
+                "Precision Agriculture": 0.1,
+                "Predictive Maintenance": 0.1,
+                "Privacy Protection": 0.3,
+                "Recommendation Systems": 0.3,
+                "Risk Management & Compliance": 0.2,
+                "Robo-Advisory & Wealth Management": 0.1,
+                "Scientific Discovery & Research": 0.2,
+                "Smart Building & IoT": 0.1,
+                "Smart City Infrastructure": 0.1,
+                "Smart Energy & Grid Management": 0.2,
+                "Smart Transportation Infrastructure": 0.1,
+                "Social Media Analytics": 0.2,
+                "Special Needs & Accessibility": 0.1,
+                "Sports Analytics": 0.1,
+                "Supply Chain Optimization": 0.1,
+                "Telemedicine & Remote Healthcare": 0.1,
+                "Traffic Flow Optimization": 0.2,
+                "Urban Mobility & Public Transport": 0.1,
+                "Vehicle Safety & Monitoring": 0.1,
+                "Video & Image Production": 0.3,
+                "Virtual & Augmented Reality": 0.3,
+                "Waste Management & Circular Economy": 0.1
+            },
+            "('title', 'count')": {
+                "Adaptive Learning Systems": 63,
+                "Advanced Driver Assistance": 23,
+                "Algorithmic Trading & HFT": 1,
+                "Autonomous Vehicle Control": 258,
+                "Climate & Earth Sciences": 6,
+                "Clinical Diagnosis & Decision Support": 99,
+                "Creative Content Generation": 31,
+                "Credit Scoring & Underwriting": 3,
+                "Cybersecurity & Threat Detection": 23,
+                "Digital Payments & Blockchain": 2379,
+                "Drug Discovery & Molecular Design": 409,
+                "E-commerce & Retail Analytics": 35,
+                "Educational Assessment & Analytics": 10,
+                "Educational Content & Curriculum": 9,
+                "Environmental Monitoring & Climate": 13,
+                "Epidemiology & Public Health": 21,
+                "Food Safety & Quality": 1,
+                "Fraud Detection & AML": 381,
+                "Game AI & Interactive Entertainment": 16,
+                "General Research": 24443,
+                "Genomics & Precision Medicine": 88,
+                "Human-Computer Interaction": 31,
+                "Industrial Automation": 32,
+                "Inventory Management": 2,
+                "Language Learning & Translation": 670,
+                "Logistics & Supply Chain": 6,
+                "Materials Science": 11,
+                "Medical Imaging & Radiology": 250,
+                "Medical Robotics & Surgery": 3,
+                "Mental Health & Neuropsychology": 55,
+                "Misinformation Detection": 18,
+                "Music & Audio Creation": 33,
+                "Precision Agriculture": 2,
+                "Predictive Maintenance": 3,
+                "Privacy Protection": 819,
+                "Recommendation Systems": 310,
+                "Risk Management & Compliance": 57,
+                "Robo-Advisory & Wealth Management": 12,
+                "Scientific Discovery & Research": 14,
+                "Smart Building & IoT": 32,
+                "Smart City Infrastructure": 7,
+                "Smart Energy & Grid Management": 12,
+                "Smart Transportation Infrastructure": 46,
+                "Social Media Analytics": 145,
+                "Special Needs & Accessibility": 28,
+                "Sports Analytics": 11,
+                "Supply Chain Optimization": 15,
+                "Telemedicine & Remote Healthcare": 10,
+                "Traffic Flow Optimization": 23,
+                "Urban Mobility & Public Transport": 3,
+                "Vehicle Safety & Monitoring": 10,
+                "Video & Image Production": 233,
+                "Virtual & Augmented Reality": 25,
+                "Waste Management & Circular Economy": 4
+            }
+        },
+        "scenario_yearly_trends": {
+            "Adaptive Learning Systems": {
+                "2018": 5,
+                "2019": 5,
+                "2020": 6,
+                "2021": 9,
+                "2022": 9,
+                "2023": 18,
+                "2024": 11
+            },
+            "Advanced Driver Assistance": {
+                "2018": 1,
+                "2019": 2,
+                "2020": 5,
+                "2021": 3,
+                "2022": 2,
+                "2023": 6,
+                "2024": 4
+            },
+            "Algorithmic Trading & HFT": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 0,
+                "2021": 1,
+                "2022": 0,
+                "2023": 0,
+                "2024": 0
+            },
+            "Autonomous Vehicle Control": {
+                "2018": 9,
+                "2019": 17,
+                "2020": 26,
+                "2021": 35,
+                "2022": 39,
+                "2023": 71,
+                "2024": 61
+            },
+            "Climate & Earth Sciences": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 0,
+                "2021": 1,
+                "2022": 1,
+                "2023": 1,
+                "2024": 3
+            },
+            "Clinical Diagnosis & Decision Support": {
+                "2018": 2,
+                "2019": 5,
+                "2020": 9,
+                "2021": 14,
+                "2022": 22,
+                "2023": 31,
+                "2024": 16
+            },
+            "Creative Content Generation": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 2,
+                "2021": 2,
+                "2022": 4,
+                "2023": 12,
+                "2024": 11
+            },
+            "Credit Scoring & Underwriting": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 2,
+                "2021": 0,
+                "2022": 1,
+                "2023": 0,
+                "2024": 0
+            },
+            "Cybersecurity & Threat Detection": {
+                "2018": 2,
+                "2019": 3,
+                "2020": 2,
+                "2021": 3,
+                "2022": 4,
+                "2023": 4,
+                "2024": 5
+            },
+            "Digital Payments & Blockchain": {
+                "2018": 158,
+                "2019": 225,
+                "2020": 330,
+                "2021": 365,
+                "2022": 440,
+                "2023": 540,
+                "2024": 321
+            },
+            "Drug Discovery & Molecular Design": {
+                "2018": 11,
+                "2019": 26,
+                "2020": 45,
+                "2021": 54,
+                "2022": 78,
+                "2023": 111,
+                "2024": 84
+            },
+            "E-commerce & Retail Analytics": {
+                "2018": 0,
+                "2019": 3,
+                "2020": 3,
+                "2021": 8,
+                "2022": 10,
+                "2023": 8,
+                "2024": 3
+            },
+            "Educational Assessment & Analytics": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 0,
+                "2021": 1,
+                "2022": 3,
+                "2023": 4,
+                "2024": 2
+            },
+            "Educational Content & Curriculum": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 0,
+                "2021": 3,
+                "2022": 2,
+                "2023": 3,
+                "2024": 1
+            },
+            "Environmental Monitoring & Climate": {
+                "2018": 3,
+                "2019": 0,
+                "2020": 3,
+                "2021": 1,
+                "2022": 1,
+                "2023": 2,
+                "2024": 3
+            },
+            "Epidemiology & Public Health": {
+                "2018": 1,
+                "2019": 2,
+                "2020": 2,
+                "2021": 4,
+                "2022": 3,
+                "2023": 4,
+                "2024": 5
+            },
+            "Food Safety & Quality": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 0,
+                "2021": 1,
+                "2022": 0,
+                "2023": 0,
+                "2024": 0
+            },
+            "Fraud Detection & AML": {
+                "2018": 17,
+                "2019": 24,
+                "2020": 35,
+                "2021": 52,
+                "2022": 51,
+                "2023": 79,
+                "2024": 123
+            },
+            "Game AI & Interactive Entertainment": {
+                "2018": 1,
+                "2019": 0,
+                "2020": 0,
+                "2021": 3,
+                "2022": 2,
+                "2023": 4,
+                "2024": 6
+            },
+            "General Research": {
+                "2018": 1536,
+                "2019": 2292,
+                "2020": 3275,
+                "2021": 3916,
+                "2022": 4311,
+                "2023": 5721,
+                "2024": 3392
+            },
+            "Genomics & Precision Medicine": {
+                "2018": 6,
+                "2019": 6,
+                "2020": 14,
+                "2021": 17,
+                "2022": 18,
+                "2023": 11,
+                "2024": 16
+            },
+            "Human-Computer Interaction": {
+                "2018": 1,
+                "2019": 1,
+                "2020": 4,
+                "2021": 0,
+                "2022": 4,
+                "2023": 9,
+                "2024": 12
+            },
+            "Industrial Automation": {
+                "2018": 3,
+                "2019": 1,
+                "2020": 0,
+                "2021": 3,
+                "2022": 10,
+                "2023": 8,
+                "2024": 7
+            },
+            "Inventory Management": {
+                "2018": 1,
+                "2019": 0,
+                "2020": 0,
+                "2021": 0,
+                "2022": 0,
+                "2023": 0,
+                "2024": 1
+            },
+            "Language Learning & Translation": {
+                "2018": 75,
+                "2019": 98,
+                "2020": 113,
+                "2021": 132,
+                "2022": 87,
+                "2023": 116,
+                "2024": 49
+            },
+            "Logistics & Supply Chain": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 1,
+                "2021": 1,
+                "2022": 1,
+                "2023": 3,
+                "2024": 0
+            },
+            "Materials Science": {
+                "2018": 0,
+                "2019": 1,
+                "2020": 0,
+                "2021": 1,
+                "2022": 2,
+                "2023": 4,
+                "2024": 3
+            },
+            "Medical Imaging & Radiology": {
+                "2018": 13,
+                "2019": 21,
+                "2020": 32,
+                "2021": 32,
+                "2022": 40,
+                "2023": 67,
+                "2024": 45
+            },
+            "Medical Robotics & Surgery": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 1,
+                "2021": 0,
+                "2022": 0,
+                "2023": 1,
+                "2024": 1
+            },
+            "Mental Health & Neuropsychology": {
+                "2018": 7,
+                "2019": 4,
+                "2020": 4,
+                "2021": 8,
+                "2022": 13,
+                "2023": 11,
+                "2024": 8
+            },
+            "Misinformation Detection": {
+                "2018": 0,
+                "2019": 1,
+                "2020": 0,
+                "2021": 0,
+                "2022": 2,
+                "2023": 6,
+                "2024": 9
+            },
+            "Music & Audio Creation": {
+                "2018": 1,
+                "2019": 4,
+                "2020": 7,
+                "2021": 4,
+                "2022": 7,
+                "2023": 5,
+                "2024": 5
+            },
+            "Precision Agriculture": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 0,
+                "2021": 0,
+                "2022": 0,
+                "2023": 1,
+                "2024": 1
+            },
+            "Predictive Maintenance": {
+                "2018": 1,
+                "2019": 1,
+                "2020": 0,
+                "2021": 0,
+                "2022": 1,
+                "2023": 0,
+                "2024": 0
+            },
+            "Privacy Protection": {
+                "2018": 32,
+                "2019": 51,
+                "2020": 70,
+                "2021": 112,
+                "2022": 162,
+                "2023": 259,
+                "2024": 133
+            },
+            "Recommendation Systems": {
+                "2018": 17,
+                "2019": 25,
+                "2020": 34,
+                "2021": 53,
+                "2022": 58,
+                "2023": 81,
+                "2024": 42
+            },
+            "Risk Management & Compliance": {
+                "2018": 3,
+                "2019": 4,
+                "2020": 5,
+                "2021": 7,
+                "2022": 11,
+                "2023": 10,
+                "2024": 17
+            },
+            "Robo-Advisory & Wealth Management": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 2,
+                "2021": 3,
+                "2022": 1,
+                "2023": 4,
+                "2024": 2
+            },
+            "Scientific Discovery & Research": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 1,
+                "2021": 1,
+                "2022": 2,
+                "2023": 5,
+                "2024": 5
+            },
+            "Smart Building & IoT": {
+                "2018": 3,
+                "2019": 0,
+                "2020": 5,
+                "2021": 5,
+                "2022": 5,
+                "2023": 8,
+                "2024": 6
+            },
+            "Smart City Infrastructure": {
+                "2018": 2,
+                "2019": 0,
+                "2020": 0,
+                "2021": 1,
+                "2022": 2,
+                "2023": 2,
+                "2024": 0
+            },
+            "Smart Energy & Grid Management": {
+                "2018": 0,
+                "2019": 2,
+                "2020": 2,
+                "2021": 2,
+                "2022": 1,
+                "2023": 2,
+                "2024": 3
+            },
+            "Smart Transportation Infrastructure": {
+                "2018": 3,
+                "2019": 2,
+                "2020": 4,
+                "2021": 9,
+                "2022": 2,
+                "2023": 13,
+                "2024": 13
+            },
+            "Social Media Analytics": {
+                "2018": 18,
+                "2019": 8,
+                "2020": 31,
+                "2021": 23,
+                "2022": 21,
+                "2023": 28,
+                "2024": 16
+            },
+            "Special Needs & Accessibility": {
+                "2018": 1,
+                "2019": 0,
+                "2020": 0,
+                "2021": 4,
+                "2022": 5,
+                "2023": 9,
+                "2024": 9
+            },
+            "Sports Analytics": {
+                "2018": 2,
+                "2019": 0,
+                "2020": 2,
+                "2021": 0,
+                "2022": 5,
+                "2023": 1,
+                "2024": 1
+            },
+            "Supply Chain Optimization": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 1,
+                "2021": 1,
+                "2022": 3,
+                "2023": 6,
+                "2024": 4
+            },
+            "Telemedicine & Remote Healthcare": {
+                "2018": 0,
+                "2019": 1,
+                "2020": 0,
+                "2021": 2,
+                "2022": 3,
+                "2023": 2,
+                "2024": 2
+            },
+            "Traffic Flow Optimization": {
+                "2018": 1,
+                "2019": 2,
+                "2020": 3,
+                "2021": 5,
+                "2022": 3,
+                "2023": 6,
+                "2024": 3
+            },
+            "Urban Mobility & Public Transport": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 0,
+                "2021": 0,
+                "2022": 0,
+                "2023": 1,
+                "2024": 2
+            },
+            "Vehicle Safety & Monitoring": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 1,
+                "2021": 0,
+                "2022": 3,
+                "2023": 4,
+                "2024": 2
+            },
+            "Video & Image Production": {
+                "2018": 5,
+                "2019": 9,
+                "2020": 24,
+                "2021": 25,
+                "2022": 41,
+                "2023": 67,
+                "2024": 62
+            },
+            "Virtual & Augmented Reality": {
+                "2018": 1,
+                "2019": 0,
+                "2020": 1,
+                "2021": 0,
+                "2022": 4,
+                "2023": 9,
+                "2024": 10
+            },
+            "Waste Management & Circular Economy": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 1,
+                "2021": 0,
+                "2022": 1,
+                "2023": 0,
+                "2024": 2
+            }
+        },
+        "top_scenarios": [
+            "General Research",
+            "Digital Payments & Blockchain",
+            "Privacy Protection",
+            "Language Learning & Translation",
+            "Drug Discovery & Molecular Design",
+            "Fraud Detection & AML",
+            "Recommendation Systems",
+            "Autonomous Vehicle Control",
+            "Medical Imaging & Radiology",
+            "Video & Image Production"
+        ],
+        "emerging_scenarios": [
+            "Genomics & Precision Medicine",
+            "Adaptive Learning Systems",
+            "Risk Management & Compliance",
+            "Mental Health & Neuropsychology",
+            "Smart Transportation Infrastructure",
+            "Creative Content Generation",
+            "Industrial Automation",
+            "Human-Computer Interaction",
+            "Special Needs & Accessibility",
+            "Virtual & Augmented Reality"
+        ]
+    },
+    "technical_trend_analysis": {
+        "trend_distribution": {
+            "Traditional Methods": 13053,
+            "Retrieval-Augmented Generation": 3889,
+            "Transformer Architecture Evolution": 2175,
+            "Advanced CNN Architectures": 1419,
+            "Generative Model Architectures": 1194,
+            "AI Safety & Alignment": 1183,
+            "Graph Neural Networks": 1073,
+            "Large Language Models": 1016,
+            "Model Compression & Efficiency": 672,
+            "Few-Shot & Meta-Learning": 659,
+            "Self-Supervised & Contrastive Learning": 649,
+            "Transfer & Domain Adaptation": 545,
+            "Federated & Distributed Learning": 544,
+            "Foundation Model Paradigms": 440,
+            "Adversarial & Robust Learning": 417,
+            "Continual & Lifelong Learning": 416,
+            "Training Optimization": 384,
+            "Explainable AI & Interpretability": 364,
+            "Embodied AI & Robotics": 216,
+            "Recurrent & Memory Networks": 214,
+            "Neural Architecture Search": 199,
+            "Causal AI & Reasoning": 178,
+            "Neuro-Symbolic AI": 104,
+            "Multimodal Intelligence": 96,
+            "AI Agents & Tool Use": 84,
+            "Quantum Machine Learning": 37,
+            "Hardware-Software Co-design": 12,
+            "Advanced Prompting Techniques": 12
+        },
+        "trend_yearly_evolution": {
+            "AI Agents & Tool Use": {
+                "2018": 5,
+                "2019": 10,
+                "2020": 11,
+                "2021": 12,
+                "2022": 20,
+                "2023": 20,
+                "2024": 6
+            },
+            "AI Safety & Alignment": {
+                "2018": 45,
+                "2019": 85,
+                "2020": 144,
+                "2021": 176,
+                "2022": 233,
+                "2023": 301,
+                "2024": 199
+            },
+            "Advanced CNN Architectures": {
+                "2018": 166,
+                "2019": 204,
+                "2020": 271,
+                "2021": 284,
+                "2022": 215,
+                "2023": 230,
+                "2024": 49
+            },
+            "Advanced Prompting Techniques": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 0,
+                "2021": 0,
+                "2022": 1,
+                "2023": 4,
+                "2024": 7
+            },
+            "Adversarial & Robust Learning": {
+                "2018": 22,
+                "2019": 50,
+                "2020": 78,
+                "2021": 78,
+                "2022": 83,
+                "2023": 82,
+                "2024": 24
+            },
+            "Causal AI & Reasoning": {
+                "2018": 8,
+                "2019": 10,
+                "2020": 22,
+                "2021": 29,
+                "2022": 36,
+                "2023": 44,
+                "2024": 29
+            },
+            "Continual & Lifelong Learning": {
+                "2018": 21,
+                "2019": 34,
+                "2020": 62,
+                "2021": 68,
+                "2022": 82,
+                "2023": 108,
+                "2024": 41
+            },
+            "Embodied AI & Robotics": {
+                "2018": 12,
+                "2019": 18,
+                "2020": 26,
+                "2021": 42,
+                "2022": 40,
+                "2023": 49,
+                "2024": 29
+            },
+            "Explainable AI & Interpretability": {
+                "2018": 18,
+                "2019": 35,
+                "2020": 56,
+                "2021": 49,
+                "2022": 76,
+                "2023": 86,
+                "2024": 44
+            },
+            "Federated & Distributed Learning": {
+                "2018": 9,
+                "2019": 16,
+                "2020": 39,
+                "2021": 95,
+                "2022": 132,
+                "2023": 188,
+                "2024": 65
+            },
+            "Few-Shot & Meta-Learning": {
+                "2018": 32,
+                "2019": 72,
+                "2020": 117,
+                "2021": 151,
+                "2022": 119,
+                "2023": 126,
+                "2024": 42
+            },
+            "Foundation Model Paradigms": {
+                "2018": 0,
+                "2019": 0,
+                "2020": 0,
+                "2021": 4,
+                "2022": 28,
+                "2023": 168,
+                "2024": 240
+            },
+            "Generative Model Architectures": {
+                "2018": 96,
+                "2019": 137,
+                "2020": 124,
+                "2021": 125,
+                "2022": 131,
+                "2023": 295,
+                "2024": 286
+            },
+            "Graph Neural Networks": {
+                "2018": 15,
+                "2019": 54,
+                "2020": 154,
+                "2021": 193,
+                "2022": 222,
+                "2023": 310,
+                "2024": 125
+            },
+            "Hardware-Software Co-design": {
+                "2018": 0,
+                "2019": 1,
+                "2020": 3,
+                "2021": 2,
+                "2022": 3,
+                "2023": 2,
+                "2024": 1
+            },
+            "Large Language Models": {
+                "2018": 5,
+                "2019": 18,
+                "2020": 19,
+                "2021": 47,
+                "2022": 47,
+                "2023": 233,
+                "2024": 647
+            },
+            "Model Compression & Efficiency": {
+                "2018": 44,
+                "2019": 59,
+                "2020": 96,
+                "2021": 120,
+                "2022": 134,
+                "2023": 150,
+                "2024": 69
+            },
+            "Multimodal Intelligence": {
+                "2018": 1,
+                "2019": 2,
+                "2020": 4,
+                "2021": 6,
+                "2022": 24,
+                "2023": 33,
+                "2024": 26
+            },
+            "Neural Architecture Search": {
+                "2018": 7,
+                "2019": 19,
+                "2020": 48,
+                "2021": 46,
+                "2022": 43,
+                "2023": 32,
+                "2024": 4
+            },
+            "Neuro-Symbolic AI": {
+                "2018": 5,
+                "2019": 11,
+                "2020": 14,
+                "2021": 24,
+                "2022": 20,
+                "2023": 23,
+                "2024": 7
+            },
+            "Quantum Machine Learning": {
+                "2018": 0,
+                "2019": 2,
+                "2020": 4,
+                "2021": 7,
+                "2022": 10,
+                "2023": 8,
+                "2024": 6
+            },
+            "Recurrent & Memory Networks": {
+                "2018": 56,
+                "2019": 46,
+                "2020": 33,
+                "2021": 27,
+                "2022": 24,
+                "2023": 21,
+                "2024": 7
+            },
+            "Retrieval-Augmented Generation": {
+                "2018": 206,
+                "2019": 306,
+                "2020": 470,
+                "2021": 636,
+                "2022": 707,
+                "2023": 989,
+                "2024": 575
+            },
+            "Self-Supervised & Contrastive Learning": {
+                "2018": 3,
+                "2019": 8,
+                "2020": 45,
+                "2021": 123,
+                "2022": 157,
+                "2023": 247,
+                "2024": 66
+            },
+            "Traditional Methods": {
+                "2018": 1038,
+                "2019": 1465,
+                "2020": 1962,
+                "2021": 2086,
+                "2022": 2303,
+                "2023": 2797,
+                "2024": 1402
+            },
+            "Training Optimization": {
+                "2018": 45,
+                "2019": 59,
+                "2020": 70,
+                "2021": 59,
+                "2022": 60,
+                "2023": 67,
+                "2024": 24
+            },
+            "Transfer & Domain Adaptation": {
+                "2018": 44,
+                "2019": 52,
+                "2020": 76,
+                "2021": 101,
+                "2022": 107,
+                "2023": 114,
+                "2024": 51
+            },
+            "Transformer Architecture Evolution": {
+                "2018": 39,
+                "2019": 73,
+                "2020": 160,
+                "2021": 337,
+                "2022": 444,
+                "2023": 651,
+                "2024": 471
+            }
+        },
+        "trend_confidence_stats": {
+            "('trend_confidence', 'mean')": {
+                "AI Agents & Tool Use": 0.202,
+                "AI Safety & Alignment": 0.208,
+                "Advanced CNN Architectures": 0.242,
+                "Advanced Prompting Techniques": 0.267,
+                "Adversarial & Robust Learning": 0.212,
+                "Causal AI & Reasoning": 0.215,
+                "Continual & Lifelong Learning": 0.315,
+                "Embodied AI & Robotics": 0.212,
+                "Explainable AI & Interpretability": 0.203,
+                "Federated & Distributed Learning": 0.209,
+                "Few-Shot & Meta-Learning": 0.26,
+                "Foundation Model Paradigms": 0.228,
+                "Generative Model Architectures": 0.207,
+                "Graph Neural Networks": 0.344,
+                "Hardware-Software Co-design": 0.2,
+                "Large Language Models": 0.341,
+                "Model Compression & Efficiency": 0.238,
+                "Multimodal Intelligence": 0.206,
+                "Neural Architecture Search": 0.222,
+                "Neuro-Symbolic AI": 0.254,
+                "Quantum Machine Learning": 0.265,
+                "Recurrent & Memory Networks": 0.235,
+                "Retrieval-Augmented Generation": 0.2,
+                "Self-Supervised & Contrastive Learning": 0.23,
+                "Traditional Methods": 0.0,
+                "Training Optimization": 0.213,
+                "Transfer & Domain Adaptation": 0.247,
+                "Transformer Architecture Evolution": 0.258
+            },
+            "('trend_confidence', 'std')": {
+                "AI Agents & Tool Use": 0.022,
+                "AI Safety & Alignment": 0.039,
+                "Advanced CNN Architectures": 0.091,
+                "Advanced Prompting Techniques": 0.098,
+                "Adversarial & Robust Learning": 0.05,
+                "Causal AI & Reasoning": 0.052,
+                "Continual & Lifelong Learning": 0.124,
+                "Embodied AI & Robotics": 0.048,
+                "Explainable AI & Interpretability": 0.026,
+                "Federated & Distributed Learning": 0.042,
+                "Few-Shot & Meta-Learning": 0.11,
+                "Foundation Model Paradigms": 0.07,
+                "Generative Model Architectures": 0.039,
+                "Graph Neural Networks": 0.118,
+                "Hardware-Software Co-design": 0.0,
+                "Large Language Models": 0.104,
+                "Model Compression & Efficiency": 0.095,
+                "Multimodal Intelligence": 0.035,
+                "Neural Architecture Search": 0.063,
+                "Neuro-Symbolic AI": 0.101,
+                "Quantum Machine Learning": 0.116,
+                "Recurrent & Memory Networks": 0.076,
+                "Retrieval-Augmented Generation": 0.01,
+                "Self-Supervised & Contrastive Learning": 0.071,
+                "Traditional Methods": 0.0,
+                "Training Optimization": 0.051,
+                "Transfer & Domain Adaptation": 0.09,
+                "Transformer Architecture Evolution": 0.116
+            },
+            "('trend_confidence', 'count')": {
+                "AI Agents & Tool Use": 84,
+                "AI Safety & Alignment": 1183,
+                "Advanced CNN Architectures": 1419,
+                "Advanced Prompting Techniques": 12,
+                "Adversarial & Robust Learning": 417,
+                "Causal AI & Reasoning": 178,
+                "Continual & Lifelong Learning": 416,
+                "Embodied AI & Robotics": 216,
+                "Explainable AI & Interpretability": 364,
+                "Federated & Distributed Learning": 544,
+                "Few-Shot & Meta-Learning": 659,
+                "Foundation Model Paradigms": 440,
+                "Generative Model Architectures": 1194,
+                "Graph Neural Networks": 1073,
+                "Hardware-Software Co-design": 12,
+                "Large Language Models": 1016,
+                "Model Compression & Efficiency": 672,
+                "Multimodal Intelligence": 96,
+                "Neural Architecture Search": 199,
+                "Neuro-Symbolic AI": 104,
+                "Quantum Machine Learning": 37,
+                "Recurrent & Memory Networks": 214,
+                "Retrieval-Augmented Generation": 3889,
+                "Self-Supervised & Contrastive Learning": 649,
+                "Traditional Methods": 13053,
+                "Training Optimization": 384,
+                "Transfer & Domain Adaptation": 545,
+                "Transformer Architecture Evolution": 2175
+            },
+            "('title', 'count')": {
+                "AI Agents & Tool Use": 84,
+                "AI Safety & Alignment": 1183,
+                "Advanced CNN Architectures": 1419,
+                "Advanced Prompting Techniques": 12,
+                "Adversarial & Robust Learning": 417,
+                "Causal AI & Reasoning": 178,
+                "Continual & Lifelong Learning": 416,
+                "Embodied AI & Robotics": 216,
+                "Explainable AI & Interpretability": 364,
+                "Federated & Distributed Learning": 544,
+                "Few-Shot & Meta-Learning": 659,
+                "Foundation Model Paradigms": 440,
+                "Generative Model Architectures": 1194,
+                "Graph Neural Networks": 1073,
+                "Hardware-Software Co-design": 12,
+                "Large Language Models": 1016,
+                "Model Compression & Efficiency": 672,
+                "Multimodal Intelligence": 96,
+                "Neural Architecture Search": 199,
+                "Neuro-Symbolic AI": 104,
+                "Quantum Machine Learning": 37,
+                "Recurrent & Memory Networks": 214,
+                "Retrieval-Augmented Generation": 3889,
+                "Self-Supervised & Contrastive Learning": 649,
+                "Traditional Methods": 13053,
+                "Training Optimization": 384,
+                "Transfer & Domain Adaptation": 545,
+                "Transformer Architecture Evolution": 2175
+            }
+        },
+        "conference_trend_specialization": {
+            "AI Agents & Tool Use": {
+                "AAAI": 0,
+                "ICLR": 38,
+                "NeuRIPS": 46
+            },
+            "AI Safety & Alignment": {
+                "AAAI": 10,
+                "ICLR": 493,
+                "NeuRIPS": 680
+            },
+            "Advanced CNN Architectures": {
+                "AAAI": 4,
+                "ICLR": 896,
+                "NeuRIPS": 519
+            },
+            "Advanced Prompting Techniques": {
+                "AAAI": 0,
+                "ICLR": 3,
+                "NeuRIPS": 9
+            },
+            "Adversarial & Robust Learning": {
+                "AAAI": 0,
+                "ICLR": 246,
+                "NeuRIPS": 171
+            },
+            "Causal AI & Reasoning": {
+                "AAAI": 1,
+                "ICLR": 47,
+                "NeuRIPS": 130
+            },
+            "Continual & Lifelong Learning": {
+                "AAAI": 0,
+                "ICLR": 240,
+                "NeuRIPS": 176
+            },
+            "Embodied AI & Robotics": {
+                "AAAI": 0,
+                "ICLR": 108,
+                "NeuRIPS": 108
+            },
+            "Explainable AI & Interpretability": {
+                "AAAI": 4,
+                "ICLR": 168,
+                "NeuRIPS": 192
+            },
+            "Federated & Distributed Learning": {
+                "AAAI": 0,
+                "ICLR": 294,
+                "NeuRIPS": 250
+            },
+            "Few-Shot & Meta-Learning": {
+                "AAAI": 2,
+                "ICLR": 356,
+                "NeuRIPS": 301
+            },
+            "Foundation Model Paradigms": {
+                "AAAI": 1,
+                "ICLR": 58,
+                "NeuRIPS": 381
+            },
+            "Generative Model Architectures": {
+                "AAAI": 4,
+                "ICLR": 495,
+                "NeuRIPS": 695
+            },
+            "Graph Neural Networks": {
+                "AAAI": 1,
+                "ICLR": 549,
+                "NeuRIPS": 523
+            },
+            "Hardware-Software Co-design": {
+                "AAAI": 0,
+                "ICLR": 3,
+                "NeuRIPS": 9
+            },
+            "Large Language Models": {
+                "AAAI": 2,
+                "ICLR": 122,
+                "NeuRIPS": 892
+            },
+            "Model Compression & Efficiency": {
+                "AAAI": 0,
+                "ICLR": 363,
+                "NeuRIPS": 309
+            },
+            "Multimodal Intelligence": {
+                "AAAI": 0,
+                "ICLR": 29,
+                "NeuRIPS": 67
+            },
+            "Neural Architecture Search": {
+                "AAAI": 0,
+                "ICLR": 132,
+                "NeuRIPS": 67
+            },
+            "Neuro-Symbolic AI": {
+                "AAAI": 0,
+                "ICLR": 61,
+                "NeuRIPS": 43
+            },
+            "Quantum Machine Learning": {
+                "AAAI": 0,
+                "ICLR": 12,
+                "NeuRIPS": 25
+            },
+            "Recurrent & Memory Networks": {
+                "AAAI": 0,
+                "ICLR": 156,
+                "NeuRIPS": 58
+            },
+            "Retrieval-Augmented Generation": {
+                "AAAI": 17,
+                "ICLR": 1577,
+                "NeuRIPS": 2295
+            },
+            "Self-Supervised & Contrastive Learning": {
+                "AAAI": 1,
+                "ICLR": 342,
+                "NeuRIPS": 306
+            },
+            "Traditional Methods": {
+                "AAAI": 69,
+                "ICLR": 5370,
+                "NeuRIPS": 7614
+            },
+            "Training Optimization": {
+                "AAAI": 0,
+                "ICLR": 192,
+                "NeuRIPS": 192
+            },
+            "Transfer & Domain Adaptation": {
+                "AAAI": 4,
+                "ICLR": 276,
+                "NeuRIPS": 265
+            },
+            "Transformer Architecture Evolution": {
+                "AAAI": 29,
+                "ICLR": 943,
+                "NeuRIPS": 1203
+            }
+        },
+        "technology_maturity_scores": {
+            "Traditional Methods": 0.957,
+            "Retrieval-Augmented Generation": 0.466,
+            "Transformer Architecture Evolution": 0.374,
+            "Advanced CNN Architectures": 0.333,
+            "Generative Model Architectures": 0.321,
+            "AI Safety & Alignment": 0.321,
+            "Graph Neural Networks": 0.315,
+            "Large Language Models": 0.312,
+            "Model Compression & Efficiency": 0.293,
+            "Few-Shot & Meta-Learning": 0.292,
+            "Self-Supervised & Contrastive Learning": 0.292,
+            "Transfer & Domain Adaptation": 0.286,
+            "Federated & Distributed Learning": 0.286,
+            "Foundation Model Paradigms": 0.152,
+            "Adversarial & Robust Learning": 0.28,
+            "Continual & Lifelong Learning": 0.279,
+            "Training Optimization": 0.278,
+            "Explainable AI & Interpretability": 0.277,
+            "Embodied AI & Robotics": 0.269,
+            "Recurrent & Memory Networks": 0.269,
+            "Neural Architecture Search": 0.268,
+            "Causal AI & Reasoning": 0.267,
+            "Neuro-Symbolic AI": 0.263,
+            "Multimodal Intelligence": 0.262,
+            "AI Agents & Tool Use": 0.262,
+            "Quantum Machine Learning": 0.216,
+            "Hardware-Software Co-design": 0.215,
+            "Advanced Prompting Techniques": 0.086
+        },
+        "emerging_technologies": {
+            "Retrieval-Augmented Generation": {
+                "recent_papers": 2271,
+                "historical_papers": 1618,
+                "growth_rate": 40.4
+            },
+            "Transformer Architecture Evolution": {
+                "recent_papers": 1566,
+                "historical_papers": 609,
+                "growth_rate": 157.1
+            },
+            "Generative Model Architectures": {
+                "recent_papers": 712,
+                "historical_papers": 482,
+                "growth_rate": 47.7
+            },
+            "AI Safety & Alignment": {
+                "recent_papers": 733,
+                "historical_papers": 450,
+                "growth_rate": 62.9
+            },
+            "Graph Neural Networks": {
+                "recent_papers": 657,
+                "historical_papers": 416,
+                "growth_rate": 57.9
+            },
+            "Large Language Models": {
+                "recent_papers": 927,
+                "historical_papers": 89,
+                "growth_rate": 941.6
+            },
+            "Self-Supervised & Contrastive Learning": {
+                "recent_papers": 470,
+                "historical_papers": 179,
+                "growth_rate": 162.6
+            },
+            "Federated & Distributed Learning": {
+                "recent_papers": 385,
+                "historical_papers": 159,
+                "growth_rate": 142.1
+            },
+            "Foundation Model Paradigms": {
+                "recent_papers": 436,
+                "historical_papers": 4,
+                "growth_rate": 10800.0
+            },
+            "Explainable AI & Interpretability": {
+                "recent_papers": 206,
+                "historical_papers": 158,
+                "growth_rate": 30.4
+            },
+            "Causal AI & Reasoning": {
+                "recent_papers": 109,
+                "historical_papers": 69,
+                "growth_rate": 58.0
+            },
+            "Multimodal Intelligence": {
+                "recent_papers": 83,
+                "historical_papers": 13,
+                "growth_rate": 538.5
+            },
+            "Quantum Machine Learning": {
+                "recent_papers": 24,
+                "historical_papers": 13,
+                "growth_rate": 84.6
+            },
+            "Advanced Prompting Techniques": {
+                "recent_papers": 12,
+                "historical_papers": 0,
+                "growth_rate": 1200.0
+            }
+        },
+        "top_technical_trends": [
+            "Traditional Methods",
+            "Retrieval-Augmented Generation",
+            "Transformer Architecture Evolution",
+            "Advanced CNN Architectures",
+            "Generative Model Architectures",
+            "AI Safety & Alignment",
+            "Graph Neural Networks",
+            "Large Language Models",
+            "Model Compression & Efficiency",
+            "Few-Shot & Meta-Learning"
+        ],
+        "trend_diversity_index": 0.6870436886473305
+    },
+    "field_analysis": {
+        "field_distribution": {
+            "General Research": 24443,
+            "Digital Payments & Blockchain": 2379,
+            "Privacy Protection": 819,
+            "Language Learning & Translation": 670,
+            "Drug Discovery & Molecular Design": 409,
+            "Fraud Detection & AML": 381,
+            "Recommendation Systems": 310,
+            "Autonomous Vehicle Control": 258,
+            "Medical Imaging & Radiology": 250,
+            "Video & Image Production": 233,
+            "Social Media Analytics": 145,
+            "Clinical Diagnosis & Decision Support": 99,
+            "Genomics & Precision Medicine": 88,
+            "Adaptive Learning Systems": 63,
+            "Risk Management & Compliance": 57,
+            "Mental Health & Neuropsychology": 55,
+            "Smart Transportation Infrastructure": 46,
+            "E-commerce & Retail Analytics": 35,
+            "Music & Audio Creation": 33,
+            "Industrial Automation": 32,
+            "Smart Building & IoT": 32,
+            "Human-Computer Interaction": 31,
+            "Creative Content Generation": 31,
+            "Special Needs & Accessibility": 28,
+            "Virtual & Augmented Reality": 25,
+            "Advanced Driver Assistance": 23,
+            "Cybersecurity & Threat Detection": 23,
+            "Traffic Flow Optimization": 23,
+            "Epidemiology & Public Health": 21,
+            "Misinformation Detection": 18,
+            "Game AI & Interactive Entertainment": 16,
+            "Supply Chain Optimization": 15,
+            "Scientific Discovery & Research": 14,
+            "Environmental Monitoring & Climate": 13,
+            "Smart Energy & Grid Management": 12,
+            "Robo-Advisory & Wealth Management": 12,
+            "Sports Analytics": 11,
+            "Materials Science": 11,
+            "Vehicle Safety & Monitoring": 10,
+            "Telemedicine & Remote Healthcare": 10,
+            "Educational Assessment & Analytics": 10,
+            "Educational Content & Curriculum": 9,
+            "Smart City Infrastructure": 7,
+            "Logistics & Supply Chain": 6,
+            "Climate & Earth Sciences": 6,
+            "Waste Management & Circular Economy": 4,
+            "Urban Mobility & Public Transport": 3,
+            "Predictive Maintenance": 3,
+            "Medical Robotics & Surgery": 3,
+            "Credit Scoring & Underwriting": 3,
+            "Precision Agriculture": 2,
+            "Inventory Management": 2,
+            "Algorithmic Trading & HFT": 1,
+            "Food Safety & Quality": 1
+        },
+        "field_trends": {
+            "General Research": {
+                "2018": 1536,
+                "2019": 2292,
+                "2020": 3275,
+                "2021": 3916,
+                "2022": 4311,
+                "2023": 5721,
+                "2024": 3392
+            },
+            "Digital Payments & Blockchain": {
+                "2018": 158,
+                "2019": 225,
+                "2020": 330,
+                "2021": 365,
+                "2022": 440,
+                "2023": 540,
+                "2024": 321
+            },
+            "Privacy Protection": {
+                "2018": 32,
+                "2019": 51,
+                "2020": 70,
+                "2021": 112,
+                "2022": 162,
+                "2023": 259,
+                "2024": 133
+            },
+            "Language Learning & Translation": {
+                "2018": 75,
+                "2019": 98,
+                "2020": 113,
+                "2021": 132,
+                "2022": 87,
+                "2023": 116,
+                "2024": 49
+            },
+            "Drug Discovery & Molecular Design": {
+                "2018": 11,
+                "2019": 26,
+                "2020": 45,
+                "2021": 54,
+                "2022": 78,
+                "2023": 111,
+                "2024": 84
+            },
+            "Fraud Detection & AML": {
+                "2018": 17,
+                "2019": 24,
+                "2020": 35,
+                "2021": 52,
+                "2022": 51,
+                "2023": 79,
+                "2024": 123
+            },
+            "Recommendation Systems": {
+                "2018": 17,
+                "2019": 25,
+                "2020": 34,
+                "2021": 53,
+                "2022": 58,
+                "2023": 81,
+                "2024": 42
+            },
+            "Autonomous Vehicle Control": {
+                "2018": 9,
+                "2019": 17,
+                "2020": 26,
+                "2021": 35,
+                "2022": 39,
+                "2023": 71,
+                "2024": 61
+            },
+            "Medical Imaging & Radiology": {
+                "2018": 13,
+                "2019": 21,
+                "2020": 32,
+                "2021": 32,
+                "2022": 40,
+                "2023": 67,
+                "2024": 45
+            },
+            "Video & Image Production": {
+                "2018": 5,
+                "2019": 9,
+                "2020": 24,
+                "2021": 25,
+                "2022": 41,
+                "2023": 67,
+                "2024": 62
+            },
+            "Social Media Analytics": {
+                "2018": 18,
+                "2019": 8,
+                "2020": 31,
+                "2021": 23,
+                "2022": 21,
+                "2023": 28,
+                "2024": 16
+            },
+            "Clinical Diagnosis & Decision Support": {
+                "2018": 2,
+                "2019": 5,
+                "2020": 9,
+                "2021": 14,
+                "2022": 22,
+                "2023": 31,
+                "2024": 16
+            },
+            "Genomics & Precision Medicine": {
+                "2018": 6,
+                "2019": 6,
+                "2020": 14,
+                "2021": 17,
+                "2022": 18,
+                "2023": 11,
+                "2024": 16
+            },
+            "Adaptive Learning Systems": {
+                "2018": 5,
+                "2019": 5,
+                "2020": 6,
+                "2021": 9,
+                "2022": 9,
+                "2023": 18,
+                "2024": 11
+            },
+            "Risk Management & Compliance": {
+                "2018": 3,
+                "2019": 4,
+                "2020": 5,
+                "2021": 7,
+                "2022": 11,
+                "2023": 10,
+                "2024": 17
+            },
+            "Mental Health & Neuropsychology": {
+                "2018": 7,
+                "2019": 4,
+                "2020": 4,
+                "2021": 8,
+                "2022": 13,
+                "2023": 11,
+                "2024": 8
+            },
+            "Smart Transportation Infrastructure": {
+                "2018": 3,
+                "2019": 2,
+                "2020": 4,
+                "2021": 9,
+                "2022": 2,
+                "2023": 13,
+                "2024": 13
+            },
+            "E-commerce & Retail Analytics": {
+                "2019": 3,
+                "2020": 3,
+                "2021": 8,
+                "2022": 10,
+                "2023": 8,
+                "2024": 3
+            },
+            "Music & Audio Creation": {
+                "2018": 1,
+                "2019": 4,
+                "2020": 7,
+                "2021": 4,
+                "2022": 7,
+                "2023": 5,
+                "2024": 5
+            },
+            "Industrial Automation": {
+                "2018": 3,
+                "2019": 1,
+                "2021": 3,
+                "2022": 10,
+                "2023": 8,
+                "2024": 7
+            },
+            "Smart Building & IoT": {
+                "2018": 3,
+                "2020": 5,
+                "2021": 5,
+                "2022": 5,
+                "2023": 8,
+                "2024": 6
+            },
+            "Human-Computer Interaction": {
+                "2018": 1,
+                "2019": 1,
+                "2020": 4,
+                "2022": 4,
+                "2023": 9,
+                "2024": 12
+            },
+            "Creative Content Generation": {
+                "2020": 2,
+                "2021": 2,
+                "2022": 4,
+                "2023": 12,
+                "2024": 11
+            },
+            "Special Needs & Accessibility": {
+                "2018": 1,
+                "2021": 4,
+                "2022": 5,
+                "2023": 9,
+                "2024": 9
+            },
+            "Virtual & Augmented Reality": {
+                "2018": 1,
+                "2020": 1,
+                "2022": 4,
+                "2023": 9,
+                "2024": 10
+            },
+            "Advanced Driver Assistance": {
+                "2018": 1,
+                "2019": 2,
+                "2020": 5,
+                "2021": 3,
+                "2022": 2,
+                "2023": 6,
+                "2024": 4
+            },
+            "Cybersecurity & Threat Detection": {
+                "2018": 2,
+                "2019": 3,
+                "2020": 2,
+                "2021": 3,
+                "2022": 4,
+                "2023": 4,
+                "2024": 5
+            },
+            "Traffic Flow Optimization": {
+                "2018": 1,
+                "2019": 2,
+                "2020": 3,
+                "2021": 5,
+                "2022": 3,
+                "2023": 6,
+                "2024": 3
+            },
+            "Epidemiology & Public Health": {
+                "2018": 1,
+                "2019": 2,
+                "2020": 2,
+                "2021": 4,
+                "2022": 3,
+                "2023": 4,
+                "2024": 5
+            },
+            "Misinformation Detection": {
+                "2019": 1,
+                "2022": 2,
+                "2023": 6,
+                "2024": 9
+            },
+            "Game AI & Interactive Entertainment": {
+                "2018": 1,
+                "2021": 3,
+                "2022": 2,
+                "2023": 4,
+                "2024": 6
+            },
+            "Supply Chain Optimization": {
+                "2020": 1,
+                "2021": 1,
+                "2022": 3,
+                "2023": 6,
+                "2024": 4
+            },
+            "Scientific Discovery & Research": {
+                "2020": 1,
+                "2021": 1,
+                "2022": 2,
+                "2023": 5,
+                "2024": 5
+            },
+            "Environmental Monitoring & Climate": {
+                "2018": 3,
+                "2020": 3,
+                "2021": 1,
+                "2022": 1,
+                "2023": 2,
+                "2024": 3
+            },
+            "Smart Energy & Grid Management": {
+                "2019": 2,
+                "2020": 2,
+                "2021": 2,
+                "2022": 1,
+                "2023": 2,
+                "2024": 3
+            },
+            "Robo-Advisory & Wealth Management": {
+                "2020": 2,
+                "2021": 3,
+                "2022": 1,
+                "2023": 4,
+                "2024": 2
+            },
+            "Sports Analytics": {
+                "2018": 2,
+                "2020": 2,
+                "2022": 5,
+                "2023": 1,
+                "2024": 1
+            },
+            "Materials Science": {
+                "2019": 1,
+                "2021": 1,
+                "2022": 2,
+                "2023": 4,
+                "2024": 3
+            },
+            "Vehicle Safety & Monitoring": {
+                "2020": 1,
+                "2022": 3,
+                "2023": 4,
+                "2024": 2
+            },
+            "Telemedicine & Remote Healthcare": {
+                "2019": 1,
+                "2021": 2,
+                "2022": 3,
+                "2023": 2,
+                "2024": 2
+            },
+            "Educational Assessment & Analytics": {
+                "2021": 1,
+                "2022": 3,
+                "2023": 4,
+                "2024": 2
+            },
+            "Educational Content & Curriculum": {
+                "2021": 3,
+                "2022": 2,
+                "2023": 3,
+                "2024": 1
+            },
+            "Smart City Infrastructure": {
+                "2018": 2,
+                "2021": 1,
+                "2022": 2,
+                "2023": 2
+            },
+            "Logistics & Supply Chain": {
+                "2020": 1,
+                "2021": 1,
+                "2022": 1,
+                "2023": 3
+            },
+            "Climate & Earth Sciences": {
+                "2021": 1,
+                "2022": 1,
+                "2023": 1,
+                "2024": 3
+            },
+            "Waste Management & Circular Economy": {
+                "2020": 1,
+                "2022": 1,
+                "2024": 2
+            },
+            "Urban Mobility & Public Transport": {
+                "2023": 1,
+                "2024": 2
+            },
+            "Predictive Maintenance": {
+                "2018": 1,
+                "2019": 1,
+                "2022": 1
+            },
+            "Medical Robotics & Surgery": {
+                "2020": 1,
+                "2023": 1,
+                "2024": 1
+            },
+            "Credit Scoring & Underwriting": {
+                "2020": 2,
+                "2022": 1
+            },
+            "Precision Agriculture": {
+                "2023": 1,
+                "2024": 1
+            },
+            "Inventory Management": {
+                "2018": 1,
+                "2024": 1
+            },
+            "Algorithmic Trading & HFT": {
+                "2021": 1
+            },
+            "Food Safety & Quality": {
+                "2021": 1
+            }
+        },
+        "field_diversity_index": 0.2679982443878533,
+        "top_research_fields": {
+            "General Research": 24443,
+            "Digital Payments & Blockchain": 2379,
+            "Privacy Protection": 819,
+            "Language Learning & Translation": 670,
+            "Drug Discovery & Molecular Design": 409,
+            "Fraud Detection & AML": 381,
+            "Recommendation Systems": 310,
+            "Autonomous Vehicle Control": 258,
+            "Medical Imaging & Radiology": 250,
+            "Video & Image Production": 233
+        }
+    },
+    "keyword_analysis": {
+        "top_keywords": {
+            "learning": 47626,
+            "which": 24868,
+            "training": 23460,
+            "neural": 20467,
+            "methods": 17511,
+            "performance": 16911,
+            "networks": 16705,
+            "propose": 16204,
+            "tasks": 15410,
+            "such": 14143,
+            "these": 13316,
+            "network": 12778,
+            "state": 12300,
+            "deep": 12027,
+            "problem": 11904,
+            "have": 11576,
+            "algorithm": 11307,
+            "time": 10864,
+            "however": 10480,
+            "image": 10462,
+            "task": 10452,
+            "graph": 10233,
+            "work": 10171,
+            "between": 10075,
+            "both": 10057,
+            "large": 10055,
+            "framework": 9920,
+            "demonstrate": 9844,
+            "more": 9789,
+            "datasets": 9758,
+            "while": 9666,
+            "also": 9605,
+            "existing": 9585,
+            "novel": 9505,
+            "their": 9389,
+            "information": 9300,
+            "experiments": 9162,
+            "when": 8964,
+            "distribution": 8943,
+            "algorithms": 8916,
+            "different": 8909,
+            "optimization": 8822,
+            "over": 8794,
+            "proposed": 8689,
+            "where": 8577,
+            "high": 8340,
+            "multi": 8326,
+            "language": 8312,
+            "only": 8175,
+            "gradient": 8167
+        },
+        "unique_keywords_count": 44473,
+        "total_word_instances": 3673149
+    },
+    "emerging_trends": {
+        "emerging_application_scenarios": {
+            "Privacy Protection": {
+                "recent_papers": "554",
+                "historical_papers": "265",
+                "growth_rate": 109.1
+            },
+            "Drug Discovery & Molecular Design": {
+                "recent_papers": "273",
+                "historical_papers": "136",
+                "growth_rate": 100.7
+            },
+            "Fraud Detection & AML": {
+                "recent_papers": "253",
+                "historical_papers": "128",
+                "growth_rate": 97.7
+            },
+            "Autonomous Vehicle Control": {
+                "recent_papers": "171",
+                "historical_papers": "87",
+                "growth_rate": 96.6
+            },
+            "Video & Image Production": {
+                "recent_papers": "170",
+                "historical_papers": "63",
+                "growth_rate": 169.8
+            },
+            "Medical Imaging & Radiology": {
+                "recent_papers": "152",
+                "historical_papers": "98",
+                "growth_rate": 55.1
+            },
+            "Clinical Diagnosis & Decision Support": {
+                "recent_papers": "69",
+                "historical_papers": "30",
+                "growth_rate": 130.0
+            },
+            "Adaptive Learning Systems": {
+                "recent_papers": "38",
+                "historical_papers": "25",
+                "growth_rate": 52.0
+            },
+            "Risk Management & Compliance": {
+                "recent_papers": "38",
+                "historical_papers": "19",
+                "growth_rate": 100.0
+            },
+            "Smart Transportation Infrastructure": {
+                "recent_papers": "28",
+                "historical_papers": "18",
+                "growth_rate": 55.6
+            },
+            "Creative Content Generation": {
+                "recent_papers": "27",
+                "historical_papers": "4",
+                "growth_rate": 575.0
+            },
+            "Industrial Automation": {
+                "recent_papers": "25",
+                "historical_papers": "7",
+                "growth_rate": 257.1
+            },
+            "Human-Computer Interaction": {
+                "recent_papers": "25",
+                "historical_papers": "6",
+                "growth_rate": 316.7
+            },
+            "Special Needs & Accessibility": {
+                "recent_papers": "23",
+                "historical_papers": "5",
+                "growth_rate": 360.0
+            },
+            "Virtual & Augmented Reality": {
+                "recent_papers": "23",
+                "historical_papers": "2",
+                "growth_rate": 1050.0
+            },
+            "Misinformation Detection": {
+                "recent_papers": "17",
+                "historical_papers": "1",
+                "growth_rate": 1600.0
+            },
+            "Supply Chain Optimization": {
+                "recent_papers": "13",
+                "historical_papers": "2",
+                "growth_rate": 550.0
+            },
+            "Scientific Discovery & Research": {
+                "recent_papers": "12",
+                "historical_papers": "2",
+                "growth_rate": 500.0
+            },
+            "Game AI & Interactive Entertainment": {
+                "recent_papers": "12",
+                "historical_papers": "4",
+                "growth_rate": 200.0
+            }
+        },
+        "hot_topics": [
+            "General Research",
+            "Digital Payments & Blockchain",
+            "Privacy Protection",
+            "Drug Discovery & Molecular Design",
+            "Fraud Detection & AML"
+        ],
+        "technology_momentum": {
+            "Regression & Prediction": 6549,
+            "Optimization & Search": 3915,
+            "Classification & Recognition": 3846,
+            "Content Generation": 3617,
+            "Understanding & Interpretation": 2462
+        }
+    },
+    "cross_analysis": {
+        "conference_scenario_specialization": {
+            "Adaptive Learning Systems": {
+                "AAAI": 0.006711409395973154,
+                "ICLR": 0.0024320141499005084,
+                "NeuRIPS": 0.0016546844687892275
+            },
+            "Advanced Driver Assistance": {
+                "AAAI": 0.0,
+                "ICLR": 0.0008106713833001695,
+                "NeuRIPS": 0.0006846970215679561
+            },
+            "Algorithmic Trading & HFT": {
+                "AAAI": 0.0,
+                "ICLR": 7.369739848183359e-05,
+                "NeuRIPS": 0.0
+            },
+            "Autonomous Vehicle Control": {
+                "AAAI": 0.013422818791946308,
+                "ICLR": 0.007296042449701525,
+                "NeuRIPS": 0.008958119365514093
+            },
+            "Climate & Earth Sciences": {
+                "AAAI": 0.0,
+                "ICLR": 7.369739848183359e-05,
+                "NeuRIPS": 0.00028529042565331506
+            },
+            "Clinical Diagnosis & Decision Support": {
+                "AAAI": 0.0,
+                "ICLR": 0.0028005011423096766,
+                "NeuRIPS": 0.003480543192970444
+            },
+            "Creative Content Generation": {
+                "AAAI": 0.0,
+                "ICLR": 0.000368486992409168,
+                "NeuRIPS": 0.0014835102133972384
+            },
+            "Credit Scoring & Underwriting": {
+                "AAAI": 0.0,
+                "ICLR": 0.0,
+                "NeuRIPS": 0.00017117425539198904
+            },
+            "Cybersecurity & Threat Detection": {
+                "AAAI": 0.0,
+                "ICLR": 0.0006632765863365023,
+                "NeuRIPS": 0.0007988131918292822
+            },
+            "Digital Payments & Blockchain": {
+                "AAAI": 0.08053691275167785,
+                "ICLR": 0.0748028594590611,
+                "NeuRIPS": 0.07714253109665639
+            },
+            "Drug Discovery & Molecular Design": {
+                "AAAI": 0.0,
+                "ICLR": 0.01414990050851205,
+                "NeuRIPS": 0.012381604473353874
+            },
+            "E-commerce & Retail Analytics": {
+                "AAAI": 0.0,
+                "ICLR": 0.0009580661802638367,
+                "NeuRIPS": 0.0012552778728745864
+            },
+            "Educational Assessment & Analytics": {
+                "AAAI": 0.0,
+                "ICLR": 0.000368486992409168,
+                "NeuRIPS": 0.00028529042565331506
+            },
+            "Educational Content & Curriculum": {
+                "AAAI": 0.0,
+                "ICLR": 0.000368486992409168,
+                "NeuRIPS": 0.00022823234052265205
+            },
+            "Environmental Monitoring & Climate": {
+                "AAAI": 0.0,
+                "ICLR": 0.0005158817893728352,
+                "NeuRIPS": 0.00034234851078397807
+            },
+            "Epidemiology & Public Health": {
+                "AAAI": 0.0,
+                "ICLR": 0.0005158817893728352,
+                "NeuRIPS": 0.0007988131918292822
+            },
+            "Food Safety & Quality": {
+                "AAAI": 0.0,
+                "ICLR": 0.0,
+                "NeuRIPS": 5.705808513066301e-05
+            },
+            "Fraud Detection & AML": {
+                "AAAI": 0.020134228187919462,
+                "ICLR": 0.009949148795047534,
+                "NeuRIPS": 0.013865114686751112
+            },
+            "Game AI & Interactive Entertainment": {
+                "AAAI": 0.0,
+                "ICLR": 0.00044218439089100157,
+                "NeuRIPS": 0.0005705808513066301
+            },
+            "General Research": {
+                "AAAI": 0.7718120805369127,
+                "ICLR": 0.7882673741616921,
+                "NeuRIPS": 0.7778158165011982
+            },
+            "Genomics & Precision Medicine": {
+                "AAAI": 0.0,
+                "ICLR": 0.0019161323605276733,
+                "NeuRIPS": 0.003537601278101107
+            },
+            "Human-Computer Interaction": {
+                "AAAI": 0.0,
+                "ICLR": 0.0010317635787456703,
+                "NeuRIPS": 0.0009699874472212713
+            },
+            "Industrial Automation": {
+                "AAAI": 0.0,
+                "ICLR": 0.0013265531726730046,
+                "NeuRIPS": 0.0007988131918292822
+            },
+            "Inventory Management": {
+                "AAAI": 0.0,
+                "ICLR": 0.0,
+                "NeuRIPS": 0.00011411617026132602
+            },
+            "Language Learning & Translation": {
+                "AAAI": 0.040268456375838924,
+                "ICLR": 0.029257867197287936,
+                "NeuRIPS": 0.015234508729887025
+            },
+            "Logistics & Supply Chain": {
+                "AAAI": 0.0,
+                "ICLR": 0.00029478959392733434,
+                "NeuRIPS": 0.00011411617026132602
+            },
+            "Materials Science": {
+                "AAAI": 0.0,
+                "ICLR": 0.000368486992409168,
+                "NeuRIPS": 0.00034234851078397807
+            },
+            "Medical Imaging & Radiology": {
+                "AAAI": 0.013422818791946308,
+                "ICLR": 0.006043186675510354,
+                "NeuRIPS": 0.00947164213169006
+            },
+            "Medical Robotics & Surgery": {
+                "AAAI": 0.0,
+                "ICLR": 0.0,
+                "NeuRIPS": 0.00017117425539198904
+            },
+            "Mental Health & Neuropsychology": {
+                "AAAI": 0.013422818791946308,
+                "ICLR": 0.001621342766600339,
+                "NeuRIPS": 0.0017688006390505534
+            },
+            "Misinformation Detection": {
+                "AAAI": 0.006711409395973154,
+                "ICLR": 0.000368486992409168,
+                "NeuRIPS": 0.0006846970215679561
+            },
+            "Music & Audio Creation": {
+                "AAAI": 0.0,
+                "ICLR": 0.001105460977227504,
+                "NeuRIPS": 0.0010270455323519343
+            },
+            "Precision Agriculture": {
+                "AAAI": 0.0,
+                "ICLR": 0.0,
+                "NeuRIPS": 0.00011411617026132602
+            },
+            "Predictive Maintenance": {
+                "AAAI": 0.0,
+                "ICLR": 7.369739848183359e-05,
+                "NeuRIPS": 0.00011411617026132602
+            },
+            "Privacy Protection": {
+                "AAAI": 0.006711409395973154,
+                "ICLR": 0.023435772717223084,
+                "NeuRIPS": 0.02852904256533151
+            },
+            "Recommendation Systems": {
+                "AAAI": 0.0,
+                "ICLR": 0.009728056599602034,
+                "NeuRIPS": 0.010156339153258016
+            },
+            "Risk Management & Compliance": {
+                "AAAI": 0.0,
+                "ICLR": 0.001621342766600339,
+                "NeuRIPS": 0.0019970329795732057
+            },
+            "Robo-Advisory & Wealth Management": {
+                "AAAI": 0.0,
+                "ICLR": 0.00022109219544550078,
+                "NeuRIPS": 0.0005135227661759672
+            },
+            "Scientific Discovery & Research": {
+                "AAAI": 0.0,
+                "ICLR": 0.000368486992409168,
+                "NeuRIPS": 0.0005135227661759672
+            },
+            "Smart Building & IoT": {
+                "AAAI": 0.0,
+                "ICLR": 0.001105460977227504,
+                "NeuRIPS": 0.0009699874472212713
+            },
+            "Smart City Infrastructure": {
+                "AAAI": 0.0,
+                "ICLR": 0.00029478959392733434,
+                "NeuRIPS": 0.00017117425539198904
+            },
+            "Smart Energy & Grid Management": {
+                "AAAI": 0.0,
+                "ICLR": 0.00029478959392733434,
+                "NeuRIPS": 0.0004564646810453041
+            },
+            "Smart Transportation Infrastructure": {
+                "AAAI": 0.0,
+                "ICLR": 0.001621342766600339,
+                "NeuRIPS": 0.0013693940431359123
+            },
+            "Social Media Analytics": {
+                "AAAI": 0.013422818791946308,
+                "ICLR": 0.00493772569828285,
+                "NeuRIPS": 0.004336414469930389
+            },
+            "Special Needs & Accessibility": {
+                "AAAI": 0.0,
+                "ICLR": 0.00029478959392733434,
+                "NeuRIPS": 0.0013693940431359123
+            },
+            "Sports Analytics": {
+                "AAAI": 0.0,
+                "ICLR": 0.00022109219544550078,
+                "NeuRIPS": 0.0004564646810453041
+            },
+            "Supply Chain Optimization": {
+                "AAAI": 0.0,
+                "ICLR": 0.00029478959392733434,
+                "NeuRIPS": 0.0006276389364372932
+            },
+            "Telemedicine & Remote Healthcare": {
+                "AAAI": 0.0,
+                "ICLR": 0.00029478959392733434,
+                "NeuRIPS": 0.00034234851078397807
+            },
+            "Traffic Flow Optimization": {
+                "AAAI": 0.0,
+                "ICLR": 0.000736973984818336,
+                "NeuRIPS": 0.0007417551066986192
+            },
+            "Urban Mobility & Public Transport": {
+                "AAAI": 0.0,
+                "ICLR": 0.0,
+                "NeuRIPS": 0.00017117425539198904
+            },
+            "Vehicle Safety & Monitoring": {
+                "AAAI": 0.0,
+                "ICLR": 7.369739848183359e-05,
+                "NeuRIPS": 0.0005135227661759672
+            },
+            "Video & Image Production": {
+                "AAAI": 0.013422818791946308,
+                "ICLR": 0.00574839708158302,
+                "NeuRIPS": 0.008729887024991442
+            },
+            "Virtual & Augmented Reality": {
+                "AAAI": 0.0,
+                "ICLR": 0.00044218439089100157,
+                "NeuRIPS": 0.0010841036174825973
+            },
+            "Waste Management & Circular Economy": {
+                "AAAI": 0.0,
+                "ICLR": 0.0,
+                "NeuRIPS": 0.00022823234052265205
+            }
+        },
+        "yearly_task_evolution": {
+            "Anomaly Detection": {
+                "2018": 0.0010298661174047373,
+                "2019": 0.00035137034434293746,
+                "2020": 0.0019474196689386564,
+                "2021": 0.0008118530545971179,
+                "2022": 0.002363206689692783,
+                "2023": 0.001626457034426674,
+                "2024": 0.0019815059445178335
+            },
+            "Classification & Recognition": {
+                "2018": 0.1333676622039135,
+                "2019": 0.13457484188334504,
+                "2020": 0.12925998052580331,
+                "2021": 0.1325350111629795,
+                "2022": 0.131430648972914,
+                "2023": 0.11737598265112496,
+                "2024": 0.09489211800968736
+            },
+            "Clustering & Segmentation": {
+                "2018": 0.05509783728115345,
+                "2019": 0.04427266338721012,
+                "2020": 0.05331061343719572,
+                "2021": 0.05378526486705906,
+                "2022": 0.04835484457371387,
+                "2023": 0.04025481160206018,
+                "2024": 0.039850286217525316
+            },
+            "Content Generation": {
+                "2018": 0.11637487126673532,
+                "2019": 0.10189739985945186,
+                "2020": 0.10345666991236611,
+                "2021": 0.09295717475137,
+                "2022": 0.096346118887475,
+                "2023": 0.12483057739224722,
+                "2024": 0.16886833993835315
+            },
+            "Conversational AI": {
+                "2018": 0.012358393408856848,
+                "2019": 0.005270555165144062,
+                "2020": 0.004868549172346641,
+                "2021": 0.0032474122183884717,
+                "2022": 0.00618069441919651,
+                "2023": 0.005963675792897805,
+                "2024": 0.0066050198150594455
+            },
+            "Data Augmentation": {
+                "2018": 0.007209062821833162,
+                "2019": 0.006324666198172874,
+                "2020": 0.007789678675754625,
+                "2021": 0.009742236655165415,
+                "2022": 0.010361752408652973,
+                "2023": 0.010843046896177827,
+                "2024": 0.009907529722589167
+            },
+            "Decision Making": {
+                "2018": 0.0705458290422245,
+                "2019": 0.08046380885453268,
+                "2020": 0.08154819863680624,
+                "2021": 0.08199715851430892,
+                "2022": 0.07925831666969642,
+                "2023": 0.07454594741122256,
+                "2024": 0.0717745486569793
+            },
+            "Knowledge Extraction": {
+                "2018": 0.005664263645726055,
+                "2019": 0.004919184820801124,
+                "2020": 0.0046251217137293086,
+                "2021": 0.004465191800284148,
+                "2022": 0.006726049809125613,
+                "2023": 0.00528598536188669,
+                "2024": 0.007705856450902686
+            },
+            "Multimodal Learning": {
+                "2018": 0.0,
+                "2019": 0.0,
+                "2020": 0.0007302823758519961,
+                "2021": 0.0014207428455449563,
+                "2022": 0.003453917469550991,
+                "2023": 0.004879371103280022,
+                "2024": 0.008806693086745927
+            },
+            "Optimization & Search": {
+                "2018": 0.11585993820803296,
+                "2019": 0.12508784258608574,
+                "2020": 0.13291139240506328,
+                "2021": 0.1325350111629795,
+                "2022": 0.12252317760407198,
+                "2023": 0.12266196801301166,
+                "2024": 0.12241303390576838
+            },
+            "Other Tasks": {
+                "2018": 0.07929969104016478,
+                "2019": 0.07870695713281799,
+                "2020": 0.06304771178188899,
+                "2021": 0.05601786076720114,
+                "2022": 0.06144337393201236,
+                "2023": 0.04879371103280022,
+                "2024": 0.047556142668428
+            },
+            "Privacy-Preserving": {
+                "2018": 0.01132852729145211,
+                "2019": 0.011946591707659873,
+                "2020": 0.009250243427458617,
+                "2021": 0.01562817130099452,
+                "2022": 0.019632794037447738,
+                "2023": 0.021821631878557873,
+                "2024": 0.01563188022897402
+            },
+            "Recommendation": {
+                "2018": 0.014933058702368692,
+                "2019": 0.013000702740688685,
+                "2020": 0.009980525803310613,
+                "2021": 0.01156890602800893,
+                "2022": 0.012543173968369388,
+                "2023": 0.010436432637571158,
+                "2024": 0.010347864376926464
+            },
+            "Regression & Prediction": {
+                "2018": 0.21163748712667355,
+                "2019": 0.19852424455375967,
+                "2020": 0.20228821811100292,
+                "2021": 0.21047290440430283,
+                "2022": 0.2126886020723505,
+                "2023": 0.2197072377338032,
+                "2024": 0.20123293703214443
+            },
+            "Resource Allocation": {
+                "2018": 0.040679711637487126,
+                "2019": 0.04321855235418131,
+                "2020": 0.035053554040895815,
+                "2021": 0.0385630200933631,
+                "2022": 0.037447736775131794,
+                "2023": 0.040390349688262404,
+                "2024": 0.03522677234698371
+            },
+            "Robustness & Safety": {
+                "2018": 0.029351184346035016,
+                "2019": 0.05094869992972593,
+                "2020": 0.0501460564751704,
+                "2021": 0.04465191800284148,
+                "2022": 0.04399200145428104,
+                "2023": 0.03496882624017349,
+                "2024": 0.02906208718626156
+            },
+            "Style Transfer": {
+                "2018": 0.01956745623069001,
+                "2019": 0.018622628250175684,
+                "2020": 0.01777020447906524,
+                "2021": 0.01948447331033083,
+                "2022": 0.011816033448463915,
+                "2023": 0.01341827053402006,
+                "2024": 0.010127697049757816
+            },
+            "Transfer Learning": {
+                "2018": 0.009783728115345005,
+                "2019": 0.016865776528460996,
+                "2020": 0.02117818889970789,
+                "2021": 0.01948447331033083,
+                "2022": 0.01763315760770769,
+                "2023": 0.017619951206288967,
+                "2024": 0.014751210920299428
+            },
+            "Understanding & Interpretation": {
+                "2018": 0.06591143151390319,
+                "2019": 0.06500351370344343,
+                "2020": 0.07083739045764362,
+                "2021": 0.07063121574994925,
+                "2022": 0.07580439920014542,
+                "2023": 0.08457576579018704,
+                "2024": 0.10325847644209599
+            }
+        }
+    },
+    "quality_metrics": {
+        "data_completeness": {
+            "title_complete": 100.0,
+            "abstract_complete": 100.0,
+            "year_valid": 100.0
+        },
+        "analysis_coverage": {
+            "with_scenario_analysis": 100.0,
+            "high_confidence_scenarios": 0.0
+        },
+        "data_quality_score": 100.0
+    },
+    "prediction_insights": {
+        "predicted_2025_papers": 6387,
+        "predicted_hot_scenarios": [
+            "Misinformation Detection",
+            "Virtual & Augmented Reality",
+            "Creative Content Generation",
+            "Human-Computer Interaction",
+            "Scientific Discovery & Research"
+        ]
+    }
+};
+            </script>
+</head>
+<body>
+    <div class="main-container">
+        <!-- 标题区域 -->
+        <div class="header">
+            <h1>🚀 AI会议论文深度分析仪表板</h1>
+            <div class="subtitle">基于细化场景识别的智能分析系统</div>
+        </div>
+
+        <!-- 加载状态 -->
+        <div id="loadingIndicator" class="loading">
+            <div class="loading-spinner"></div>
+            <div>正在加载分析数据...</div>
+        </div>
+
+        <!-- 主要内容 -->
+        <div id="mainContent" style="display: none;">
+            <!-- 关键指标概览 -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="metric-value" id="totalPapers">0</span>
+                    <div class="metric-label">总论文数</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="timeSpan">0年</span>
+                    <div class="metric-label">时间跨度</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="conferenceCount">0</span>
+                    <div class="metric-label">覆盖会议</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="scenarioCount">0</span>
+                    <div class="metric-label">应用场景</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="techTrendCount">0</span>
+                    <div class="metric-label">技术趋势</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="growthRate">0%</span>
+                    <div class="metric-label">年增长率</div>
+                </div>
+            </div>
+
+            <!-- 主要图表分析 -->
+            <div class="analysis-grid">
+                <!-- 年度发表趋势 -->
+                <div class="chart-panel">
+                    <div class="panel-title">📈 年度发表趋势</div>
+                    <div class="chart-container" id="yearlyTrendChart"></div>
+                </div>
+
+                <!-- 会议分布 -->
+                <div class="chart-panel">
+                    <div class="panel-title">🏛️ 会议分布概览</div>
+                    <div class="chart-container" id="conferenceDistChart"></div>
+                </div>
+
+                <!-- 应用场景分布 -->
+                <div class="chart-panel">
+                    <div class="panel-title">🎯 细化应用场景分布</div>
+                    <div class="chart-container" id="scenarioDistChart"></div>
+                </div>
+
+                <!-- 技术趋势分布 -->
+                <div class="chart-panel">
+                    <div class="panel-title">🔬 技术发展趋势</div>
+                    <div class="chart-container" id="techTrendChart"></div>
+                </div>
+            </div>
+
+            <!-- 详细分析面板 -->
+            <div class="detail-panel">
+                <div class="panel-title">📊 深度分析洞察</div>
+                
+                <!-- 标签页导航 -->
+                <div class="tabs-container">
+                    <button class="tab-btn active" onclick="switchTab('scenarios')">应用场景细分</button>
+                    <button class="tab-btn" onclick="switchTab('technology')">技术演进分析</button>
+                    <button class="tab-btn" onclick="switchTab('tasks')">任务类型分布</button>
+                    <button class="tab-btn" onclick="switchTab('trends')">新兴趋势识别</button>
+                    <button class="tab-btn" onclick="switchTab('insights')">关键洞察</button>
+                </div>
+
+                <!-- 应用场景细分 -->
+                <div id="scenarios" class="tab-content active">
+                    <div class="chart-container" id="detailedScenariosChart"></div>
+                </div>
+
+                <!-- 技术演进分析 -->
+                <div id="technology" class="tab-content">
+                    <div class="chart-container" id="techEvolutionChart"></div>
+                </div>
+
+                <!-- 任务类型分布 -->
+                <div id="tasks" class="tab-content">
+                    <div class="chart-container" id="taskTypesChart"></div>
+                </div>
+
+                <!-- 新兴趋势识别 -->
+                <div id="trends" class="tab-content">
+                    <div class="stats-list" id="emergingTrendsList"></div>
+                </div>
+
+                <!-- 关键洞察 -->
+                <div id="insights" class="tab-content">
+                    <div class="stats-list" id="keyInsightsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let analysisData = null;
+        let charts = {};
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await loadData();
+                initializeDashboard();
+                hideLoading();
+            } catch (error) {
+                console.error('初始化失败:', error);
+                showError('数据加载失败: ' + error.message);
+            }
+        });
+
+        // 数据加载
+        async function loadData() {
+            try {
+                if (window.embeddedAnalysisData) {
+                    analysisData = window.embeddedAnalysisData;
+                } else {
+                    const response = await fetch('../outputs/analysis/comprehensive_analysis.json');
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    analysisData = await response.json();
+                }
+            } catch (error) {
+                throw new Error('无法加载分析数据');
+            }
+        }
+
+        // 初始化仪表板
+        function initializeDashboard() {
+            updateMetrics();
+            initializeCharts();
+            populateDetailedAnalysis();
+            document.getElementById('mainContent').style.display = 'block';
+        }
+
+        // 更新关键指标
+        function updateMetrics() {
+            const basic = analysisData.basic_statistics || {};
+            const temporal = analysisData.temporal_analysis || {};
+            const scenarios = analysisData.task_scenario_analysis || {};
+            const techTrends = analysisData.technical_trend_analysis || {};
+
+            document.getElementById('totalPapers').textContent = 
+                (basic.total_papers || 0).toLocaleString();
+            
+            document.getElementById('timeSpan').textContent = 
+                basic.year_range ? `${basic.year_range[1] - basic.year_range[0] + 1}年` : '0年';
+            
+            document.getElementById('conferenceCount').textContent = 
+                (basic.conferences?.length || 0);
+            
+            document.getElementById('scenarioCount').textContent = 
+                (scenarios.top_scenarios?.length || 0);
+            
+            document.getElementById('techTrendCount').textContent = 
+                (techTrends.top_technical_trends?.length || 0);
+            
+            document.getElementById('growthRate').textContent = 
+                temporal.total_growth_rate ? `${temporal.total_growth_rate.toFixed(1)}%` : '0%';
+        }
+
+        // 初始化图表
+        function initializeCharts() {
+            // 年度趋势图
+            initYearlyTrendChart();
+            
+            // 会议分布图
+            initConferenceDistChart();
+            
+            // 应用场景分布图
+            initScenarioDistChart();
+            
+            // 技术趋势图
+            initTechTrendChart();
+            
+            // 详细场景分析图
+            initDetailedScenariosChart();
+            
+            // 技术演进图
+            initTechEvolutionChart();
+            
+            // 任务类型图
+            initTaskTypesChart();
+        }
+
+        // 年度趋势图
+        function initYearlyTrendChart() {
+            const chartDom = document.getElementById('yearlyTrendChart');
+            const chart = echarts.init(chartDom);
+            charts.yearlyTrend = chart;
+
+            const temporal = analysisData.temporal_analysis || {};
+            const yearlyData = temporal.yearly_paper_counts || {};
+            
+            const years = Object.keys(yearlyData).sort();
+            const counts = years.map(year => yearlyData[year]);
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#3498db',
+                    borderWidth: 1,
+                    textStyle: { color: '#2c3e50' }
+                },
+                grid: { top: 20, left: 40, right: 20, bottom: 30 },
+                xAxis: {
+                    type: 'category',
+                    data: years,
+                    axisLine: { lineStyle: { color: '#bdc3c7' } },
+                    axisLabel: { color: '#7f8c8d' }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { lineStyle: { color: '#bdc3c7' } },
+                    axisLabel: { color: '#7f8c8d' },
+                    splitLine: { lineStyle: { color: '#ecf0f1' } }
+                },
+                series: [{
+                    data: counts,
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: { color: '#3498db', width: 3 },
+                    itemStyle: { color: '#3498db' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(52, 152, 219, 0.3)' },
+                                { offset: 1, color: 'rgba(52, 152, 219, 0.1)' }
+                            ]
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 会议分布图
+        function initConferenceDistChart() {
+            const chartDom = document.getElementById('conferenceDistChart');
+            const chart = echarts.init(chartDom);
+            charts.conferenceDist = chart;
+
+            const basic = analysisData.basic_statistics || {};
+            const confCounts = basic.conference_counts || {};
+            
+            const data = Object.entries(confCounts)
+                .map(([name, value]) => ({ name, value }))
+                .sort((a, b) => b.value - a.value);
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#3498db'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['30%', '70%'],
+                    data: data,
+                    itemStyle: {
+                        borderRadius: 5,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        position: 'outside',
+                        formatter: '{b}\n{d}%'
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.3)'
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 应用场景分布图
+        function initScenarioDistChart() {
+            const chartDom = document.getElementById('scenarioDistChart');
+            const chart = echarts.init(chartDom);
+            charts.scenarioDist = chart;
+
+            const scenarios = analysisData.task_scenario_analysis || {};
+            const scenarioData = scenarios.scenario_distribution || {};
+            
+            const data = Object.entries(scenarioData)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 8); // 显示前8个
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#3498db'
+                },
+                grid: { top: 20, left: 10, right: 20, bottom: 80 },
+                xAxis: {
+                    type: 'category',
+                    data: data.map(([name]) => name.split(' ')[0] + '...'),
+                    axisLabel: { 
+                        color: '#7f8c8d',
+                        rotate: 45,
+                        interval: 0
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: { color: '#7f8c8d' },
+                    splitLine: { lineStyle: { color: '#ecf0f1' } }
+                },
+                series: [{
+                    type: 'bar',
+                    data: data.map(([, value]) => value),
+                    itemStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 1, x2: 0, y2: 0,
+                            colorStops: [
+                                { offset: 0, color: '#3498db' },
+                                { offset: 1, color: '#5dade2' }
+                            ]
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 技术趋势图
+        function initTechTrendChart() {
+            const chartDom = document.getElementById('techTrendChart');
+            const chart = echarts.init(chartDom);
+            charts.techTrend = chart;
+
+            const techTrends = analysisData.technical_trend_analysis || {};
+            const trendData = techTrends.trend_distribution || {};
+            
+            const data = Object.entries(trendData)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 8); // 显示前8个
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#e74c3c'
+                },
+                grid: { top: 20, left: 10, right: 20, bottom: 80 },
+                xAxis: {
+                    type: 'category',
+                    data: data.map(([name]) => name.split(' ')[0] + '...'),
+                    axisLabel: { 
+                        color: '#7f8c8d',
+                        rotate: 45,
+                        interval: 0
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: { color: '#7f8c8d' },
+                    splitLine: { lineStyle: { color: '#ecf0f1' } }
+                },
+                series: [{
+                    type: 'bar',
+                    data: data.map(([, value]) => value),
+                    itemStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 1, x2: 0, y2: 0,
+                            colorStops: [
+                                { offset: 0, color: '#e74c3c' },
+                                { offset: 1, color: '#ec7063' }
+                            ]
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 详细场景分析图
+        function initDetailedScenariosChart() {
+            const chartDom = document.getElementById('detailedScenariosChart');
+            const chart = echarts.init(chartDom);
+            charts.detailedScenarios = chart;
+
+            const scenarios = analysisData.task_scenario_analysis || {};
+            const scenarioData = scenarios.scenario_distribution || {};
+            
+            const data = Object.entries(scenarioData)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 15); // 显示前15个详细场景
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#9b59b6'
+                },
+                grid: { top: 20, left: 200, right: 20, bottom: 30 },
+                xAxis: {
+                    type: 'value',
+                    axisLabel: { color: '#7f8c8d' },
+                    splitLine: { lineStyle: { color: '#ecf0f1' } }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: data.map(([name]) => name.length > 25 ? name.substring(0, 25) + '...' : name),
+                    axisLabel: { color: '#7f8c8d' }
+                },
+                series: [{
+                    type: 'bar',
+                    data: data.map(([, value]) => value),
+                    itemStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 1, y2: 0,
+                            colorStops: [
+                                { offset: 0, color: '#9b59b6' },
+                                { offset: 1, color: '#bb8fce' }
+                            ]
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 技术演进图
+        function initTechEvolutionChart() {
+            const chartDom = document.getElementById('techEvolutionChart');
+            const chart = echarts.init(chartDom);
+            charts.techEvolution = chart;
+
+            const techTrends = analysisData.technical_trend_analysis || {};
+            const maturityScores = techTrends.technology_maturity_scores || {};
+            
+            const data = Object.entries(maturityScores)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 12);
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c}%',
+                    backgroundColor: 'rgba(255,255,255,0.95)'
+                },
+                radar: {
+                    indicator: data.map(([name]) => ({
+                        name: name.length > 15 ? name.substring(0, 15) + '...' : name,
+                        max: 1
+                    })),
+                    radius: '70%'
+                },
+                series: [{
+                    type: 'radar',
+                    data: [{
+                        value: data.map(([, score]) => score),
+                        itemStyle: { color: '#f39c12' },
+                        areaStyle: { color: 'rgba(243, 156, 18, 0.3)' }
+                    }]
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 任务类型图
+        function initTaskTypesChart() {
+            const chartDom = document.getElementById('taskTypesChart');
+            const chart = echarts.init(chartDom);
+            charts.taskTypes = chart;
+
+            const scenarios = analysisData.task_scenario_analysis || {};
+            const taskData = scenarios.task_type_distribution || {};
+            
+            const data = Object.entries(taskData)
+                .map(([name, value]) => ({ name, value }))
+                .sort((a, b) => b.value - a.value);
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)',
+                    backgroundColor: 'rgba(255,255,255,0.95)'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: '60%',
+                    data: data,
+                    roseType: 'radius',
+                    itemStyle: {
+                        borderRadius: 5
+                    },
+                    label: {
+                        show: true,
+                        position: 'outside'
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 填充详细分析数据
+        function populateDetailedAnalysis() {
+            populateEmergingTrends();
+            populateKeyInsights();
+        }
+
+        // 填充新兴趋势
+        function populateEmergingTrends() {
+            const container = document.getElementById('emergingTrendsList');
+            const emerging = analysisData.emerging_trends || {};
+            const techTrends = analysisData.technical_trend_analysis || {};
+            
+            let html = '';
+            
+            // 新兴应用场景
+            const emergingScenarios = emerging.emerging_application_scenarios || {};
+            Object.entries(emergingScenarios).slice(0, 6).forEach(([scenario, data]) => {
+                html += `
+                    <div class="stat-item">
+                        <div class="stat-name">🚀 ${scenario}</div>
+                        <div class="stat-value">增长率: +${data.growth_rate}% | 近期论文: ${data.recent_papers}篇</div>
+                    </div>
+                `;
+            });
+            
+            // 新兴技术
+            const emergingTech = techTrends.emerging_technologies || {};
+            Object.entries(emergingTech).slice(0, 6).forEach(([tech, data]) => {
+                html += `
+                    <div class="stat-item">
+                        <div class="stat-name">⚡ ${tech}</div>
+                        <div class="stat-value">增长率: +${data.growth_rate}% | 近期论文: ${data.recent_papers}篇</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 填充关键洞察
+        function populateKeyInsights() {
+            const container = document.getElementById('keyInsightsList');
+            const basic = analysisData.basic_statistics || {};
+            const temporal = analysisData.temporal_analysis || {};
+            const quality = analysisData.quality_metrics || {};
+            const prediction = analysisData.prediction_insights || {};
+            
+            let html = `
+                <div class="stat-item">
+                    <div class="stat-name">📊 数据完整性</div>
+                    <div class="stat-value">质量评分: ${quality.data_quality_score?.toFixed(1) || 0}/100</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-name">📈 发展趋势</div>
+                    <div class="stat-value">峰值年份: ${temporal.peak_year || 'N/A'} (${temporal.peak_count?.toLocaleString() || 0}篇)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-name">🔮 2025年预测</div>
+                    <div class="stat-value">预计论文数: ${prediction.predicted_2025_papers?.toLocaleString() || 'N/A'}篇</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-name">🏛️ 顶级会议</div>
+                    <div class="stat-value">${analysisData.conference_analysis?.top_conferences?.slice(0,3).join(', ') || 'N/A'}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-name">🎯 分析覆盖</div>
+                    <div class="stat-value">场景分析: ${quality.analysis_coverage?.with_scenario_analysis?.toFixed(1) || 0}%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-name">📚 研究多样性</div>
+                    <div class="stat-value">多样性指数: ${analysisData.field_analysis?.field_diversity_index?.toFixed(3) || 0}</div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // 标签页切换
+        function switchTab(tabName) {
+            // 隐藏所有内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有按钮的激活状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 显示选中的内容
+            document.getElementById(tabName).classList.add('active');
+            
+            // 激活对应按钮
+            event.target.classList.add('active');
+            
+            // 重新调整图表大小
+            setTimeout(() => {
+                Object.values(charts).forEach(chart => {
+                    if (chart && chart.resize) {
+                        chart.resize();
+                    }
+                });
+            }, 100);
+        }
+
+        // 隐藏加载状态
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            document.getElementById('loadingIndicator').innerHTML = `
+                <div style="color: #e74c3c;">
+                    <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ 加载失败</div>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+
+        // 响应式处理
+        window.addEventListener('resize', function() {
+            Object.values(charts).forEach(chart => {
+                if (chart && chart.resize) {
+                    chart.resize();
+                }
+            });
+        });
+
+        // 页面可见性变化时重新调整
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                setTimeout(() => {
+                    Object.values(charts).forEach(chart => {
+                        if (chart && chart.resize) {
+                            chart.resize();
+                        }
+                    });
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>

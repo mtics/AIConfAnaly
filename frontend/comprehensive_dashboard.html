@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI会议论文深度分析 - 综合报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 15px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 1em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .analysis-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .analysis-section:hover {
+            transform: translateY(-2px);
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .chart-container:hover {
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .chart-title {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .trend-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .trend-item {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .trend-item:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            transform: translateX(5px);
+        }
+
+        .trend-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .trend-stats {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .insight-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .insight-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .insight-content {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header fade-in">
+            <h1>🚀 AI会议论文深度分析报告</h1>
+            <p>基于智能场景识别的综合分析系统</p>
+        </div>
+
+        <div id="loadingIndicator" class="loading">
+            <div>📊 正在加载分析数据...</div>
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+
+        <div id="mainContent" style="display: none;">
+            <!-- 统计概览 -->
+            <div class="stats-grid fade-in">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPapers">0</div>
+                    <div class="stat-label">总论文数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="timeSpan">0</div>
+                    <div class="stat-label">时间跨度</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="conferenceCount">0</div>
+                    <div class="stat-label">会议数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="growthRate">0%</div>
+                    <div class="stat-label">整体增长率</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="scenarioCount">0</div>
+                    <div class="stat-label">应用场景</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="techTrendCount">0</div>
+                    <div class="stat-label">技术趋势</div>
+                </div>
+            </div>
+
+            <!-- 主要图表区域 -->
+            <div class="analysis-grid">
+                <!-- 论文发表趋势 -->
+                <div class="chart-container">
+                    <div class="chart-title">📈 论文发表年度趋势</div>
+                    <div id="temporalChart" style="height: 300px;"></div>
+                </div>
+
+                <!-- 会议分布 -->
+                <div class="chart-container">
+                    <div class="chart-title">🏛️ 会议论文分布</div>
+                    <div id="conferenceChart" style="height: 300px;"></div>
+                </div>
+
+                <!-- 应用场景分析 -->
+                <div class="chart-container">
+                    <div class="chart-title">🎯 应用场景分布</div>
+                    <div id="scenarioChart" style="height: 350px;"></div>
+                </div>
+
+                <!-- 技术趋势分析 -->
+                <div class="chart-container">
+                    <div class="chart-title">🔬 技术趋势分布</div>
+                    <div id="techTrendChart" style="height: 350px;"></div>
+                </div>
+
+                <!-- 任务类型分析 -->
+                <div class="chart-container">
+                    <div class="chart-title">⚙️ 任务类型分布</div>
+                    <div id="taskTypeChart" style="height: 300px;"></div>
+                </div>
+
+                <!-- 年度演进热力图 -->
+                <div class="chart-container">
+                    <div class="chart-title">🌡️ 应用场景年度演进</div>
+                    <div id="evolutionChart" style="height: 300px;"></div>
+                </div>
+            </div>
+
+            <!-- 详细分析标签页 -->
+            <div class="chart-container full-width">
+                <div class="chart-title">📊 深度分析</div>
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab('emerging')">🔥 新兴趋势</button>
+                    <button class="tab" onclick="showTab('cross-analysis')">🔄 交叉分析</button>
+                    <button class="tab" onclick="showTab('predictions')">🔮 预测洞察</button>
+                    <button class="tab" onclick="showTab('quality')">✅ 质量评估</button>
+                </div>
+
+                <div id="emerging" class="tab-content active">
+                    <div class="insights-grid">
+                        <div class="insight-card">
+                            <div class="insight-title">🚀 新兴应用场景</div>
+                            <div class="insight-content" id="emergingScenarios">加载中...</div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-title">⚡ 新兴技术趋势</div>
+                            <div class="insight-content" id="emergingTech">加载中...</div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-title">📈 技术成熟度</div>
+                            <div class="insight-content" id="techMaturity">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cross-analysis" class="tab-content">
+                    <div class="chart-container">
+                        <div class="chart-title">会议-应用场景交叉分析</div>
+                        <div id="crossAnalysisChart" style="height: 400px;"></div>
+                    </div>
+                </div>
+
+                <div id="predictions" class="tab-content">
+                    <div class="insights-grid">
+                        <div class="insight-card">
+                            <div class="insight-title">🔮 2025年预测</div>
+                            <div class="insight-content" id="predictions2025">加载中...</div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-title">📊 热门领域预测</div>
+                            <div class="insight-content" id="hotFieldsPrediction">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="quality" class="tab-content">
+                    <div class="insights-grid">
+                        <div class="insight-card">
+                            <div class="insight-title">📋 数据完整性</div>
+                            <div class="insight-content" id="dataCompleteness">加载中...</div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-title">🎯 分析覆盖率</div>
+                            <div class="insight-content" id="analysisCoverage">加载中...</div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-title">⭐ 整体质量评分</div>
+                            <div class="insight-content" id="qualityScore">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 热门趋势列表 -->
+            <div class="analysis-section full-width">
+                <div class="section-title">🔥 热门研究趋势详情</div>
+                <div class="trend-list" id="trendList">
+                    <!-- 动态生成趋势项 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let analysisData = null;
+
+        // 页面加载时初始化
+        window.addEventListener('load', async function() {
+            try {
+                await loadAnalysisData();
+                renderDashboard();
+            } catch (error) {
+                showError('数据加载失败: ' + error.message);
+            }
+        });
+
+        async function loadAnalysisData() {
+            try {
+                // 尝试加载嵌入数据或从文件加载
+                if (window.embeddedAnalysisData) {
+                    analysisData = window.embeddedAnalysisData;
+                } else {
+                    const response = await fetch('../outputs/analysis/comprehensive_analysis.json');
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    analysisData = await response.json();
+                }
+                
+                if (!analysisData) {
+                    throw new Error('分析数据为空');
+                }
+            } catch (error) {
+                console.error('加载数据时出错:', error);
+                throw error;
+            }
+        }
+
+        function renderDashboard() {
+            hideLoading();
+            updateBasicStats();
+            renderCharts();
+            updateDetailedAnalysis();
+            showMainContent();
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        function showMainContent() {
+            document.getElementById('mainContent').style.display = 'block';
+        }
+
+        function showError(message) {
+            document.getElementById('loadingIndicator').style.display = 'none';
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function updateBasicStats() {
+            const basic = analysisData.basic_statistics;
+            const temporal = analysisData.temporal_analysis;
+            const scenarios = analysisData.task_scenario_analysis;
+            const techTrends = analysisData.technical_trend_analysis;
+
+            document.getElementById('totalPapers').textContent = basic.total_papers?.toLocaleString() || '0';
+            document.getElementById('timeSpan').textContent = basic.year_range ? 
+                `${basic.year_range[1] - basic.year_range[0] + 1}年` : '0年';
+            document.getElementById('conferenceCount').textContent = basic.conferences?.length || '0';
+            document.getElementById('growthRate').textContent = temporal.total_growth_rate ? 
+                `${temporal.total_growth_rate.toFixed(1)}%` : '0%';
+            document.getElementById('scenarioCount').textContent = scenarios?.top_scenarios?.length || '0';
+            document.getElementById('techTrendCount').textContent = techTrends?.top_technical_trends?.length || '0';
+        }
+
+        function renderCharts() {
+            renderTemporalChart();
+            renderConferenceChart();
+            renderScenarioChart();
+            renderTechTrendChart();
+            renderTaskTypeChart();
+            renderEvolutionChart();
+            renderCrossAnalysisChart();
+        }
+
+        function renderTemporalChart() {
+            const chart = echarts.init(document.getElementById('temporalChart'));
+            const temporal = analysisData.temporal_analysis;
+            
+            if (!temporal || !temporal.yearly_paper_counts) return;
+
+            const years = Object.keys(temporal.yearly_paper_counts).sort();
+            const counts = years.map(year => temporal.yearly_paper_counts[year]);
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderColor: '#667eea',
+                    textStyle: { color: '#333' }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: years,
+                    axisLabel: { color: '#666' }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: { color: '#666' }
+                },
+                series: [{
+                    data: counts,
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: { color: '#667eea', width: 3 },
+                    itemStyle: { color: '#667eea' },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(102, 126, 234, 0.3)' },
+                            { offset: 1, color: 'rgba(102, 126, 234, 0.1)' }
+                        ])
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        function renderConferenceChart() {
+            const chart = echarts.init(document.getElementById('conferenceChart'));
+            const basic = analysisData.basic_statistics;
+            
+            if (!basic || !basic.conference_counts) return;
+
+            const data = Object.entries(basic.conference_counts)
+                .map(([name, value]) => ({ name, value }))
+                .sort((a, b) => b.value - a.value);
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderColor: '#667eea'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['30%', '70%'],
+                    data: data,
+                    itemStyle: {
+                        borderRadius: 5,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        position: 'outside'
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        function renderScenarioChart() {
+            const chart = echarts.init(document.getElementById('scenarioChart'));
+            const scenarios = analysisData.task_scenario_analysis;
+            
+            if (!scenarios || !scenarios.scenario_distribution) return;
+
+            const data = Object.entries(scenarios.scenario_distribution)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderColor: '#667eea'
+                },
+                xAxis: {
+                    type: 'value',
+                    axisLabel: { color: '#666' }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: data.map(([name]) => name),
+                    axisLabel: { 
+                        color: '#666',
+                        formatter: function(value) {
+                            return value.length > 20 ? value.substring(0, 20) + '...' : value;
+                        }
+                    }
+                },
+                series: [{
+                    type: 'bar',
+                    data: data.map(([, value]) => value),
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#667eea' },
+                            { offset: 1, color: '#764ba2' }
+                        ])
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        function renderTechTrendChart() {
+            const chart = echarts.init(document.getElementById('techTrendChart'));
+            const techTrends = analysisData.technical_trend_analysis;
+            
+            if (!techTrends || !techTrends.trend_distribution) return;
+
+            const data = Object.entries(techTrends.trend_distribution)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderColor: '#667eea'
+                },
+                xAxis: {
+                    type: 'value',
+                    axisLabel: { color: '#666' }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: data.map(([name]) => name),
+                    axisLabel: { 
+                        color: '#666',
+                        formatter: function(value) {
+                            return value.length > 15 ? value.substring(0, 15) + '...' : value;
+                        }
+                    }
+                },
+                series: [{
+                    type: 'bar',
+                    data: data.map(([, value]) => value),
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#764ba2' },
+                            { offset: 1, color: '#667eea' }
+                        ])
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        function renderTaskTypeChart() {
+            const chart = echarts.init(document.getElementById('taskTypeChart'));
+            const scenarios = analysisData.task_scenario_analysis;
+            
+            if (!scenarios || !scenarios.task_type_distribution) return;
+
+            const data = Object.entries(scenarios.task_type_distribution)
+                .map(([name, value]) => ({ name, value }));
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderColor: '#667eea'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: '70%',
+                    data: data,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        function renderEvolutionChart() {
+            const chart = echarts.init(document.getElementById('evolutionChart'));
+            const scenarios = analysisData.task_scenario_analysis;
+            
+            if (!scenarios || !scenarios.scenario_yearly_trends) return;
+
+            // 简化热力图数据
+            const trendData = scenarios.scenario_yearly_trends;
+            const years = Object.keys(trendData).sort();
+            const topScenarios = scenarios.top_scenarios?.slice(0, 8) || [];
+            
+            const data = [];
+            topScenarios.forEach((scenario, i) => {
+                years.forEach((year, j) => {
+                    const value = trendData[year]?.[scenario] || 0;
+                    data.push([j, i, value]);
+                });
+            });
+
+            const option = {
+                tooltip: {
+                    position: 'top',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderColor: '#667eea'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: years,
+                    axisLabel: { color: '#666' }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: topScenarios.map(s => s.length > 15 ? s.substring(0, 15) + '...' : s),
+                    axisLabel: { color: '#666' }
+                },
+                visualMap: {
+                    min: 0,
+                    max: Math.max(...data.map(d => d[2])),
+                    calculable: true,
+                    inRange: {
+                        color: ['#e6f3ff', '#667eea']
+                    }
+                },
+                series: [{
+                    type: 'heatmap',
+                    data: data,
+                    label: {
+                        show: true
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        function renderCrossAnalysisChart() {
+            const chart = echarts.init(document.getElementById('crossAnalysisChart'));
+            const crossAnalysis = analysisData.cross_analysis;
+            
+            if (!crossAnalysis || !crossAnalysis.conference_scenario_specialization) return;
+
+            // 处理交叉分析数据
+            const data = crossAnalysis.conference_scenario_specialization;
+            const conferences = Object.keys(data);
+            const scenarios = new Set();
+            
+            conferences.forEach(conf => {
+                Object.keys(data[conf] || {}).forEach(scenario => scenarios.add(scenario));
+            });
+            
+            const scenarioArray = Array.from(scenarios).slice(0, 10);
+            const chartData = [];
+            
+            conferences.forEach((conf, i) => {
+                scenarioArray.forEach((scenario, j) => {
+                    const value = data[conf]?.[scenario] || 0;
+                    chartData.push([i, j, (value * 100).toFixed(1)]);
+                });
+            });
+
+            const option = {
+                tooltip: {
+                    position: 'top',
+                    formatter: function(params) {
+                        return `${conferences[params.data[0]]}<br/>${scenarioArray[params.data[1]]}<br/>占比: ${params.data[2]}%`;
+                    },
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderColor: '#667eea'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: conferences,
+                    axisLabel: { color: '#666' }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: scenarioArray.map(s => s.length > 20 ? s.substring(0, 20) + '...' : s),
+                    axisLabel: { color: '#666' }
+                },
+                visualMap: {
+                    min: 0,
+                    max: Math.max(...chartData.map(d => parseFloat(d[2]))),
+                    calculable: true,
+                    inRange: {
+                        color: ['#f0f2ff', '#667eea']
+                    }
+                },
+                series: [{
+                    type: 'heatmap',
+                    data: chartData,
+                    label: {
+                        show: false
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        function updateDetailedAnalysis() {
+            updateEmergingTrends();
+            updatePredictions();
+            updateQualityMetrics();
+        }
+
+        function updateEmergingTrends() {
+            const emerging = analysisData.emerging_trends;
+            const techTrends = analysisData.technical_trend_analysis;
+            
+            // 新兴应用场景
+            if (emerging && emerging.emerging_application_scenarios) {
+                const scenarios = Object.entries(emerging.emerging_application_scenarios)
+                    .slice(0, 3)
+                    .map(([name, data]) => `${name} (+${data.growth_rate}%)`)
+                    .join('<br/>');
+                document.getElementById('emergingScenarios').innerHTML = scenarios || '暂无明显新兴场景';
+            }
+            
+            // 新兴技术趋势
+            if (techTrends && techTrends.emerging_technologies) {
+                const tech = Object.entries(techTrends.emerging_technologies)
+                    .slice(0, 3)
+                    .map(([name, data]) => `${name} (+${data.growth_rate}%)`)
+                    .join('<br/>');
+                document.getElementById('emergingTech').innerHTML = tech || '暂无明显新兴技术';
+            }
+            
+            // 技术成熟度
+            if (techTrends && techTrends.technology_maturity_scores) {
+                const maturity = Object.entries(techTrends.technology_maturity_scores)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 3)
+                    .map(([name, score]) => `${name}: ${(score * 100).toFixed(0)}%`)
+                    .join('<br/>');
+                document.getElementById('techMaturity').innerHTML = maturity || '暂无成熟度数据';
+            }
+        }
+
+        function updatePredictions() {
+            const predictions = analysisData.prediction_insights;
+            
+            if (predictions) {
+                if (predictions.predicted_2025_papers) {
+                    document.getElementById('predictions2025').innerHTML = 
+                        `预计2025年论文数量: ${predictions.predicted_2025_papers.toLocaleString()}篇`;
+                }
+                
+                if (predictions.predicted_hot_scenarios) {
+                    const hotFields = predictions.predicted_hot_scenarios
+                        .slice(0, 3)
+                        .join('<br/>');
+                    document.getElementById('hotFieldsPrediction').innerHTML = hotFields || '暂无预测数据';
+                }
+            }
+        }
+
+        function updateQualityMetrics() {
+            const quality = analysisData.quality_metrics;
+            
+            if (quality) {
+                if (quality.data_completeness) {
+                    const completeness = quality.data_completeness;
+                    document.getElementById('dataCompleteness').innerHTML = 
+                        `标题完整性: ${completeness.title_complete?.toFixed(1)}%<br/>` +
+                        `摘要完整性: ${completeness.abstract_complete?.toFixed(1)}%<br/>` +
+                        `年份有效性: ${completeness.year_valid?.toFixed(1)}%`;
+                }
+                
+                if (quality.analysis_coverage) {
+                    const coverage = quality.analysis_coverage;
+                    document.getElementById('analysisCoverage').innerHTML = 
+                        `场景分析覆盖: ${coverage.with_scenario_analysis?.toFixed(1)}%<br/>` +
+                        `高置信度分析: ${coverage.high_confidence_scenarios?.toFixed(1)}%`;
+                }
+                
+                if (quality.data_quality_score) {
+                    document.getElementById('qualityScore').innerHTML = 
+                        `整体质量评分: ${quality.data_quality_score.toFixed(1)}/100`;
+                }
+            }
+        }
+
+        function showTab(tabName) {
+            // 隐藏所有标签页内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有标签的active类
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选定的标签页
+            document.getElementById(tabName).classList.add('active');
+            
+            // 激活对应的标签
+            event.target.classList.add('active');
+            
+            // 如果是交叉分析标签页，重新渲染图表
+            if (tabName === 'cross-analysis') {
+                setTimeout(() => {
+                    const chart = echarts.getInstanceByDom(document.getElementById('crossAnalysisChart'));
+                    if (chart) {
+                        chart.resize();
+                    }
+                }, 100);
+            }
+        }
+
+        // 响应式处理
+        window.addEventListener('resize', function() {
+            const charts = ['temporalChart', 'conferenceChart', 'scenarioChart', 'techTrendChart', 'taskTypeChart', 'evolutionChart', 'crossAnalysisChart'];
+            charts.forEach(chartId => {
+                const chart = echarts.getInstanceByDom(document.getElementById(chartId));
+                if (chart) {
+                    chart.resize();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

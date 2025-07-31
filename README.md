@@ -1,203 +1,161 @@
-# 🚀 AI Conference Paper Analysis System
+# AI Conference Paper Analysis System
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+## 🚀 项目简介
 
-A comprehensive system for scraping, downloading, analyzing, and visualizing AI/ML conference papers from major venues including ICML, NeuRIPS, ICLR, AAAI, and IJCAI.
+一个**重新组织优化**的AI会议论文分析系统，提供智能场景识别、技术趋势分析和交互式可视化。
 
-## 🎯 Features
+### ✨ 核心特性
 
-- **📊 Paper Scraping**: Automated scraping from 5 major AI conferences
-- **📄 PDF Download**: Intelligent PDF downloading with retry mechanisms  
-- **🔍 Text Extraction**: Extract and process text content from PDFs
-- **🧠 Vectorization**: Create embeddings for semantic search
-- **📈 Analysis**: Comprehensive trend and field analysis
-- **🎨 Visualization**: Interactive dashboards and charts
-- **🔎 Search**: Vector-based semantic paper search
+- **🎯 智能场景识别**: 40+细分应用领域分类
+- **🔬 技术趋势分析**: 15+技术发展方向追踪  
+- **⚙️ 任务类型分类**: 18+AI任务类别识别
+- **📊 交互式仪表板**: 现代化单页面可视化
+- **🏗️ 优化架构**: 清晰的模块化项目结构
 
-## 🚀 Quick Start
-
-### Installation
-```bash
-# Install dependencies
-python utils/system_setup.py
-# OR
-pip install -r requirements.txt
-```
-
-### Basic Usage
-```bash
-# Scrape papers from all conferences
-python main.py --scrape
-
-# Scrape specific conferences
-python main.py --scrape --conferences ICML NeuRIPS
-
-# Run analysis  
-python main.py --analyze
-
-# Complete workflow
-python main.py --scrape --analyze
-```
-
-### PDF Management
-```bash
-# Check download status
-python utils/pdf_manager.py status
-
-# Download missing PDFs
-python utils/pdf_manager.py missing
-
-# Download all PDFs
-python utils/pdf_manager.py download
-```
-
-### Generate Visualizations
-```bash
-# Create interactive dashboard
-python visualization/generate_dashboard.py
-
-# Run trend analysis
-python visualization/trend_analysis.py
-
-# Process and vectorize text
-python utils/text_processor.py pipeline
-```
-
-## 🏗️ Project Structure
+## 📁 优化后的项目结构
 
 ```
 ConfAnalysis/
-├── 📁 Core
-│   ├── main.py                     # Main entry point
-│   ├── config.py                   # Configuration settings
-│   └── requirements.txt            # Dependencies
-│
-├── 🕷️ scrapers/                   # Conference paper scrapers
-│   ├── base_scraper.py            # Base scraper class
-│   ├── icml_scraper.py            # ICML scraper
-│   ├── neurips_scraper.py         # NeuRIPS scraper  
-│   ├── iclr_scraper.py            # ICLR scraper
-│   ├── aaai_scraper.py            # AAAI scraper
-│   └── ijcai_scraper.py           # IJCAI scraper
-│
-├── 📊 analysis/                   # Data analysis modules
-│   ├── data_processor.py          # Data processing
-│   ├── field_extractor.py         # Research field classification
-│   └── visualizer.py              # Visualization generation
-│
-├── 🔧 utils/                      # Core utilities and tools
-│   ├── config.py                  # Configuration settings
-│   ├── pdf_manager.py             # PDF download and management
-│   ├── text_processor.py          # Text extraction and vectorization
-│   ├── vector_database.py         # Vector database operations
-│   └── system_setup.py            # System and dependency setup
-│
-├── 🎨 visualization/              # Visualization tools
-│   ├── generate_dashboard.py      # Interactive dashboard
-│   └── trend_analysis.py          # Trend analysis
-│
-├── 🔍 search/                     # Search functionality
-│   └── paper_search_interface.py  # Search interface
-│
-└── 📁 outputs/                    # All generated outputs
-    ├── 📊 data/                   # Data storage
-    │   ├── raw/                   # Raw scraped data
-    │   ├── processed/             # Processed datasets
-    │   ├── pdfs/                  # Downloaded PDFs
-    │   └── extracted_text/        # Extracted text content
-    ├── 📈 results/                # Analysis results
-    │   └── figures/               # Charts and visualizations
-    └── 🎨 dashboard/              # Interactive dashboards
+├── conf_analysis/          # 🏗️ 核心分析系统
+│   ├── core/              #   核心组件
+│   │   ├── analyzer.py    #   主分析器
+│   │   ├── scrapers/      #   数据抓取器
+│   │   ├── models/        #   数据模型
+│   │   └── utils/         #   工具函数
+│   ├── docs/             #   项目文档
+│   └── __init__.py       #   包初始化
+├── tools/                 # 🔧 实用工具
+│   ├── utilities/         #   助手工具
+│   ├── data_generators/   #   数据生成器
+│   └── visualization_generators/  # 可视化生成器
+├── frontend/             # 🎨 前端界面 (精简版)
+├── outputs/              # 📊 分析结果
+├── tests/               # 🧪 测试文件
+├── main_new.py          # 🚪 新主入口
+└── CLAUDE.md            # 📋 开发指南
 ```
 
-## Supported Conferences
+## 🚀 快速开始
 
-- **ICML**: International Conference on Machine Learning
-- **NeuRIPS**: Conference on Neural Information Processing Systems  
-- **ICLR**: International Conference on Learning Representations
-- **AAAI**: AAAI Conference on Artificial Intelligence
-- **IJCAI**: International Joint Conference on Artificial Intelligence
+### 安装依赖
+```bash
+pip install -r requirements.txt
+```
 
-## Research Fields Detected
+### 运行分析
+```bash
+# 推荐方式：使用新的主入口
+python main_new.py
 
-The system automatically classifies papers into these research areas:
+# 或者使用模块方式
+python -m conf_analysis.main
+```
 
-- Computer Vision
-- Natural Language Processing
-- Reinforcement Learning
-- Deep Learning
-- Machine Learning Theory
-- Optimization
-- Probabilistic Models
-- Graph Neural Networks
-- Federated Learning
-- Meta Learning
-- Generative Models
-- Adversarial Learning
+### 查看结果
+```bash
+# 打开综合分析报告
+# frontend/comprehensive_report.html
+```
 
-## Output Files
+## 🎯 主要改进
 
-### Data Files
-- `outputs/data/raw/*.json`: Raw scraped paper data
-- `outputs/data/processed/all_papers_processed.csv`: Processed paper data with features
+### ✅ 结构优化
+- ✨ **模块化设计**: 清晰的功能分离
+- 🗂️ **减少冗余**: 移除重复的代码文件
+- 📁 **分类存储**: 工具、文档、核心代码分门别类
+- 🧹 **精简前端**: 保留核心界面文件
 
-### Analysis Results
-- `outputs/results/basic_statistics.json`: Conference and temporal statistics
-- `outputs/results/field_statistics.json`: Research field analysis
-- `outputs/results/keyword_frequencies.json`: Most common keywords
-- `outputs/results/topics_info.json`: Topic modeling results
+### ✅ 代码整合
+- 🔄 **统一入口**: 新的 `main_new.py` 主入口
+- 📦 **包结构**: 标准Python包组织
+- 🔗 **导入路径**: 优化的模块导入关系
+- 🛠️ **工具集成**: 实用工具统一管理
 
-### Visualizations
-- `outputs/results/figures/`: Conference distribution charts, temporal trends, field heatmaps
-- `outputs/dashboard/ai_conference_dashboard.html`: Main interactive dashboard
-- Static visualization files (PNG charts and word clouds)
+### ✅ 文档整合  
+- 📚 **统一文档**: 合并冗余的分析报告
+- 📝 **清晰指南**: 更新的开发和使用说明
+- 🏗️ **架构说明**: 详细的项目结构文档
 
-## Customization
+## 📊 分析功能
 
-### Adding New Conferences
-1. Create a new scraper class inheriting from `BaseScraper`
-2. Implement the `get_papers_for_year()` method
-3. Add conference info to `config.py`
-4. Import in `scrapers/__init__.py`
+### 智能分类系统
+- **应用场景**: 医疗健康、自动驾驶、金融科技、智慧城市等40+领域
+- **技术趋势**: Transformer、图神经网络、大语言模型等15+技术方向
+- **任务类型**: 分类识别、生成创造、优化决策等18+任务类别
 
-### Adding Research Fields
-Edit the `field_keywords` dictionary in `analysis/field_extractor.py`:
+### 可视化仪表板
+- 📈 年度发表趋势分析
+- 🏛️ 会议分布统计
+- 🎯 应用场景热力图  
+- 🔬 技术趋势演进
+- 📊 交叉分析图表
+
+## 🧹 项目清理完成
+
+✅ **已清理的冗余文件**:
+- ❌ 根目录下的旧Python脚本 (generate_*.py, *_analyzer.py等)
+- ❌ 旧的src/和code/目录 
+- ❌ 冗余的文档文件 (各种SUMMARY.md)
+- ❌ 重复的前端文件 (trend_visualization*.html等)
+
+⚠️ **仍需手动删除的目录** (与项目无关的MCP项目):
+```
+📁 可选删除 (不影响项目运行):
+├── arxiv-latex-mcp/
+├── claude-code-mcp/
+├── claude-memory-mcp/
+├── jupyter-notebook-mcp/
+├── mcp-memory-keeper/
+├── mcp-memory-service/
+└── paper-search-mcp/
+```
+
+## 🔧 开发指南
+
+详细的开发说明请参考：[CLAUDE.md](CLAUDE.md)
+
+## 📈 使用示例
 
 ```python
-self.field_keywords['New Field'] = {
-    'keyword1', 'keyword2', 'phrase example'
-}
+from conf_analysis import UnifiedAnalyzer
+
+# 创建分析器实例
+analyzer = UnifiedAnalyzer()
+
+# 执行综合分析
+results = analyzer.perform_comprehensive_analysis()
+
+# 查看结果
+print(f"分析了 {results['basic_statistics']['total_papers']} 篇论文")
 ```
 
-### Modifying Visualizations
-The `Visualizer` class provides methods for different chart types. You can:
-- Customize colors and styles
-- Add new plot types
-- Modify interactive dashboard components
+## 🔄 迁移指南
 
-## Notes
+### 从旧版本迁移
 
-- **Rate Limiting**: Scrapers include delays to be respectful to servers
-- **Error Handling**: Robust error handling for network issues
-- **Data Validation**: Automatic cleaning and validation of scraped data
-- **Extensible**: Easy to add new conferences or analysis methods
+旧的使用方式：
+```bash
+python main.py          # 旧主入口
+python src/analyzer.py  # 旧分析器
+```
 
-## Troubleshooting
+新的使用方式：
+```bash
+python main_new.py      # 新主入口  
+python -m conf_analysis.main  # 模块方式
+```
 
-1. **Import Errors**: Ensure all dependencies are installed
-2. **Scraping Failures**: Check internet connection and conference website availability
-3. **Empty Results**: Some conferences may have changed their website structure
-4. **Memory Issues**: For large datasets, consider processing conferences separately
+### 目录对应关系
+```
+旧结构 → 新结构
+├── main.py → main_new.py
+├── src/ → conf_analysis/core/
+├── code/ → conf_analysis/core/
+├── generate_*.py → tools/visualization_generators/
+├── *_analyzer.py → tools/utilities/
+└── frontend/ → frontend/ (精简版)
+```
 
-## Contributing
+---
 
-Feel free to:
-- Add support for new conferences
-- Improve field classification
-- Add new visualization types
-- Enhance NLP processing
-
-## Legal
-
-This tool is for academic research purposes. Respect the terms of service of conference websites and implement appropriate rate limiting.
+**🎉 项目重构完成！现在拥有更清晰、更高效的代码结构！**

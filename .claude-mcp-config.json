@@ -1,0 +1,68 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "mcp-server-filesystem",
+      "args": ["E:\\OneDrive - UTS\\Workspace\\Code\\Others\\ConfAnalysis"],
+      "env": {}
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "env": {}
+    },
+    "memory-keeper": {
+      "command": "node",
+      "args": ["E:\\OneDrive - UTS\\Workspace\\Code\\Others\\ConfAnalysis\\mcp_tools\\mcp-memory-keeper\\dist\\index.js"],
+      "env": {
+        "MEMORY_DB_PATH": "E:\\OneDrive - UTS\\Workspace\\Code\\Others\\ConfAnalysis\\memory.db"
+      }
+    },
+    "jupyter-notebook": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "E:\\OneDrive - UTS\\Workspace\\Code\\Others\\ConfAnalysis\\mcp_tools\\jupyter-notebook-mcp\\src",
+        "run",
+        "jupyter_mcp_server.py"
+      ],
+      "env": {}
+    },
+    "claude-code-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@steipete/claude-code-mcp@latest"
+      ],
+      "env": {}
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "env": {}
+    },
+    "arxiv-latex": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "E:\\OneDrive - UTS\\Workspace\\Code\\Others\\ConfAnalysis\\mcp_tools\\arxiv-latex-mcp",
+        "run",
+        "server/main.py"
+      ],
+      "env": {}
+    },
+    "paper-search": {
+      "command": "python",
+      "args": ["-m", "paper_search_mcp.server"],
+      "env": {
+        "SEMANTIC_SCHOLAR_API_KEY": ""
+      }
+    },
+    "academic-search": {
+      "command": "python",
+      "args": [
+        "E:\\OneDrive - UTS\\Workspace\\Code\\Others\\ConfAnalysis\\mcp_tools\\academic-search-mcp-server\\src\\academic_search_server\\server.py"
+      ],
+      "env": {}
+    }
+  }
+}

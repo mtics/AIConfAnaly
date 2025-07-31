@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI论文深度分析 - 统一仪表板</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2c3e50;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        /* 关键指标概览 */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+            border-left: 4px solid #3498db;
+            transition: transform 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+        }
+
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 4px;
+        }
+
+        /* 主要分析区域 */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .chart-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .panel-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .chart-container {
+            height: 280px;
+        }
+
+        /* 详细分析标签 */
+        .detail-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .tabs-container {
+            display: flex;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #7f8c8d;
+        }
+
+        .tab-btn.active {
+            background: #3498db;
+            color: white;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            min-height: 300px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 统计列表样式 */
+        .stats-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .stat-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .tabs-container {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ecf0f1;
+            border-left: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 图表悬浮提示优化 */
+        .chart-tooltip {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border: 1px solid #ddd !important;
+            border-radius: 6px !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- 标题区域 -->
+        <div class="header">
+            <h1>🚀 AI会议论文深度分析仪表板</h1>
+            <div class="subtitle">基于细化场景识别的智能分析系统</div>
+        </div>
+
+        <!-- 加载状态 -->
+        <div id="loadingIndicator" class="loading">
+            <div class="loading-spinner"></div>
+            <div>正在加载分析数据...</div>
+        </div>
+
+        <!-- 主要内容 -->
+        <div id="mainContent" style="display: none;">
+            <!-- 关键指标概览 -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="metric-value" id="totalPapers">0</span>
+                    <div class="metric-label">总论文数</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="timeSpan">0年</span>
+                    <div class="metric-label">时间跨度</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="conferenceCount">0</span>
+                    <div class="metric-label">覆盖会议</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="scenarioCount">0</span>
+                    <div class="metric-label">应用场景</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="techTrendCount">0</span>
+                    <div class="metric-label">技术趋势</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-value" id="growthRate">0%</span>
+                    <div class="metric-label">年增长率</div>
+                </div>
+            </div>
+
+            <!-- 主要图表分析 -->
+            <div class="analysis-grid">
+                <!-- 年度发表趋势 -->
+                <div class="chart-panel">
+                    <div class="panel-title">📈 年度发表趋势</div>
+                    <div class="chart-container" id="yearlyTrendChart"></div>
+                </div>
+
+                <!-- 会议分布 -->
+                <div class="chart-panel">
+                    <div class="panel-title">🏛️ 会议分布概览</div>
+                    <div class="chart-container" id="conferenceDistChart"></div>
+                </div>
+
+                <!-- 应用场景分布 -->
+                <div class="chart-panel">
+                    <div class="panel-title">🎯 细化应用场景分布</div>
+                    <div class="chart-container" id="scenarioDistChart"></div>
+                </div>
+
+                <!-- 技术趋势分布 -->
+                <div class="chart-panel">
+                    <div class="panel-title">🔬 技术发展趋势</div>
+                    <div class="chart-container" id="techTrendChart"></div>
+                </div>
+            </div>
+
+            <!-- 详细分析面板 -->
+            <div class="detail-panel">
+                <div class="panel-title">📊 深度分析洞察</div>
+                
+                <!-- 标签页导航 -->
+                <div class="tabs-container">
+                    <button class="tab-btn active" onclick="switchTab('scenarios')">应用场景细分</button>
+                    <button class="tab-btn" onclick="switchTab('technology')">技术演进分析</button>
+                    <button class="tab-btn" onclick="switchTab('tasks')">任务类型分布</button>
+                    <button class="tab-btn" onclick="switchTab('trends')">新兴趋势识别</button>
+                    <button class="tab-btn" onclick="switchTab('insights')">关键洞察</button>
+                </div>
+
+                <!-- 应用场景细分 -->
+                <div id="scenarios" class="tab-content active">
+                    <div class="chart-container" id="detailedScenariosChart"></div>
+                </div>
+
+                <!-- 技术演进分析 -->
+                <div id="technology" class="tab-content">
+                    <div class="chart-container" id="techEvolutionChart"></div>
+                </div>
+
+                <!-- 任务类型分布 -->
+                <div id="tasks" class="tab-content">
+                    <div class="chart-container" id="taskTypesChart"></div>
+                </div>
+
+                <!-- 新兴趋势识别 -->
+                <div id="trends" class="tab-content">
+                    <div class="stats-list" id="emergingTrendsList"></div>
+                </div>
+
+                <!-- 关键洞察 -->
+                <div id="insights" class="tab-content">
+                    <div class="stats-list" id="keyInsightsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let analysisData = null;
+        let charts = {};
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await loadData();
+                initializeDashboard();
+                hideLoading();
+            } catch (error) {
+                console.error('初始化失败:', error);
+                showError('数据加载失败: ' + error.message);
+            }
+        });
+
+        // 数据加载
+        async function loadData() {
+            try {
+                if (window.embeddedAnalysisData) {
+                    analysisData = window.embeddedAnalysisData;
+                } else {
+                    const response = await fetch('../outputs/analysis/comprehensive_analysis.json');
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    analysisData = await response.json();
+                }
+            } catch (error) {
+                throw new Error('无法加载分析数据');
+            }
+        }
+
+        // 初始化仪表板
+        function initializeDashboard() {
+            updateMetrics();
+            initializeCharts();
+            populateDetailedAnalysis();
+            document.getElementById('mainContent').style.display = 'block';
+        }
+
+        // 更新关键指标
+        function updateMetrics() {
+            const basic = analysisData.basic_statistics || {};
+            const temporal = analysisData.temporal_analysis || {};
+            const scenarios = analysisData.task_scenario_analysis || {};
+            const techTrends = analysisData.technical_trend_analysis || {};
+
+            document.getElementById('totalPapers').textContent = 
+                (basic.total_papers || 0).toLocaleString();
+            
+            document.getElementById('timeSpan').textContent = 
+                basic.year_range ? `${basic.year_range[1] - basic.year_range[0] + 1}年` : '0年';
+            
+            document.getElementById('conferenceCount').textContent = 
+                (basic.conferences?.length || 0);
+            
+            document.getElementById('scenarioCount').textContent = 
+                (scenarios.top_scenarios?.length || 0);
+            
+            document.getElementById('techTrendCount').textContent = 
+                (techTrends.top_technical_trends?.length || 0);
+            
+            document.getElementById('growthRate').textContent = 
+                temporal.total_growth_rate ? `${temporal.total_growth_rate.toFixed(1)}%` : '0%';
+        }
+
+        // 初始化图表
+        function initializeCharts() {
+            // 年度趋势图
+            initYearlyTrendChart();
+            
+            // 会议分布图
+            initConferenceDistChart();
+            
+            // 应用场景分布图
+            initScenarioDistChart();
+            
+            // 技术趋势图
+            initTechTrendChart();
+            
+            // 详细场景分析图
+            initDetailedScenariosChart();
+            
+            // 技术演进图
+            initTechEvolutionChart();
+            
+            // 任务类型图
+            initTaskTypesChart();
+        }
+
+        // 年度趋势图
+        function initYearlyTrendChart() {
+            const chartDom = document.getElementById('yearlyTrendChart');
+            const chart = echarts.init(chartDom);
+            charts.yearlyTrend = chart;
+
+            const temporal = analysisData.temporal_analysis || {};
+            const yearlyData = temporal.yearly_paper_counts || {};
+            
+            const years = Object.keys(yearlyData).sort();
+            const counts = years.map(year => yearlyData[year]);
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#3498db',
+                    borderWidth: 1,
+                    textStyle: { color: '#2c3e50' }
+                },
+                grid: { top: 20, left: 40, right: 20, bottom: 30 },
+                xAxis: {
+                    type: 'category',
+                    data: years,
+                    axisLine: { lineStyle: { color: '#bdc3c7' } },
+                    axisLabel: { color: '#7f8c8d' }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { lineStyle: { color: '#bdc3c7' } },
+                    axisLabel: { color: '#7f8c8d' },
+                    splitLine: { lineStyle: { color: '#ecf0f1' } }
+                },
+                series: [{
+                    data: counts,
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: { color: '#3498db', width: 3 },
+                    itemStyle: { color: '#3498db' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(52, 152, 219, 0.3)' },
+                                { offset: 1, color: 'rgba(52, 152, 219, 0.1)' }
+                            ]
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 会议分布图
+        function initConferenceDistChart() {
+            const chartDom = document.getElementById('conferenceDistChart');
+            const chart = echarts.init(chartDom);
+            charts.conferenceDist = chart;
+
+            const basic = analysisData.basic_statistics || {};
+            const confCounts = basic.conference_counts || {};
+            
+            const data = Object.entries(confCounts)
+                .map(([name, value]) => ({ name, value }))
+                .sort((a, b) => b.value - a.value);
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#3498db'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['30%', '70%'],
+                    data: data,
+                    itemStyle: {
+                        borderRadius: 5,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        position: 'outside',
+                        formatter: '{b}\n{d}%'
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.3)'
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 应用场景分布图
+        function initScenarioDistChart() {
+            const chartDom = document.getElementById('scenarioDistChart');
+            const chart = echarts.init(chartDom);
+            charts.scenarioDist = chart;
+
+            const scenarios = analysisData.task_scenario_analysis || {};
+            const scenarioData = scenarios.scenario_distribution || {};
+            
+            const data = Object.entries(scenarioData)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 8); // 显示前8个
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#3498db'
+                },
+                grid: { top: 20, left: 10, right: 20, bottom: 80 },
+                xAxis: {
+                    type: 'category',
+                    data: data.map(([name]) => name.split(' ')[0] + '...'),
+                    axisLabel: { 
+                        color: '#7f8c8d',
+                        rotate: 45,
+                        interval: 0
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: { color: '#7f8c8d' },
+                    splitLine: { lineStyle: { color: '#ecf0f1' } }
+                },
+                series: [{
+                    type: 'bar',
+                    data: data.map(([, value]) => value),
+                    itemStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 1, x2: 0, y2: 0,
+                            colorStops: [
+                                { offset: 0, color: '#3498db' },
+                                { offset: 1, color: '#5dade2' }
+                            ]
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 技术趋势图
+        function initTechTrendChart() {
+            const chartDom = document.getElementById('techTrendChart');
+            const chart = echarts.init(chartDom);
+            charts.techTrend = chart;
+
+            const techTrends = analysisData.technical_trend_analysis || {};
+            const trendData = techTrends.trend_distribution || {};
+            
+            const data = Object.entries(trendData)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 8); // 显示前8个
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#e74c3c'
+                },
+                grid: { top: 20, left: 10, right: 20, bottom: 80 },
+                xAxis: {
+                    type: 'category',
+                    data: data.map(([name]) => name.split(' ')[0] + '...'),
+                    axisLabel: { 
+                        color: '#7f8c8d',
+                        rotate: 45,
+                        interval: 0
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: { color: '#7f8c8d' },
+                    splitLine: { lineStyle: { color: '#ecf0f1' } }
+                },
+                series: [{
+                    type: 'bar',
+                    data: data.map(([, value]) => value),
+                    itemStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 1, x2: 0, y2: 0,
+                            colorStops: [
+                                { offset: 0, color: '#e74c3c' },
+                                { offset: 1, color: '#ec7063' }
+                            ]
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 详细场景分析图
+        function initDetailedScenariosChart() {
+            const chartDom = document.getElementById('detailedScenariosChart');
+            const chart = echarts.init(chartDom);
+            charts.detailedScenarios = chart;
+
+            const scenarios = analysisData.task_scenario_analysis || {};
+            const scenarioData = scenarios.scenario_distribution || {};
+            
+            const data = Object.entries(scenarioData)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 15); // 显示前15个详细场景
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#9b59b6'
+                },
+                grid: { top: 20, left: 200, right: 20, bottom: 30 },
+                xAxis: {
+                    type: 'value',
+                    axisLabel: { color: '#7f8c8d' },
+                    splitLine: { lineStyle: { color: '#ecf0f1' } }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: data.map(([name]) => name.length > 25 ? name.substring(0, 25) + '...' : name),
+                    axisLabel: { color: '#7f8c8d' }
+                },
+                series: [{
+                    type: 'bar',
+                    data: data.map(([, value]) => value),
+                    itemStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 1, y2: 0,
+                            colorStops: [
+                                { offset: 0, color: '#9b59b6' },
+                                { offset: 1, color: '#bb8fce' }
+                            ]
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 技术演进图
+        function initTechEvolutionChart() {
+            const chartDom = document.getElementById('techEvolutionChart');
+            const chart = echarts.init(chartDom);
+            charts.techEvolution = chart;
+
+            const techTrends = analysisData.technical_trend_analysis || {};
+            const maturityScores = techTrends.technology_maturity_scores || {};
+            
+            const data = Object.entries(maturityScores)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 12);
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c}%',
+                    backgroundColor: 'rgba(255,255,255,0.95)'
+                },
+                radar: {
+                    indicator: data.map(([name]) => ({
+                        name: name.length > 15 ? name.substring(0, 15) + '...' : name,
+                        max: 1
+                    })),
+                    radius: '70%'
+                },
+                series: [{
+                    type: 'radar',
+                    data: [{
+                        value: data.map(([, score]) => score),
+                        itemStyle: { color: '#f39c12' },
+                        areaStyle: { color: 'rgba(243, 156, 18, 0.3)' }
+                    }]
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 任务类型图
+        function initTaskTypesChart() {
+            const chartDom = document.getElementById('taskTypesChart');
+            const chart = echarts.init(chartDom);
+            charts.taskTypes = chart;
+
+            const scenarios = analysisData.task_scenario_analysis || {};
+            const taskData = scenarios.task_type_distribution || {};
+            
+            const data = Object.entries(taskData)
+                .map(([name, value]) => ({ name, value }))
+                .sort((a, b) => b.value - a.value);
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)',
+                    backgroundColor: 'rgba(255,255,255,0.95)'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: '60%',
+                    data: data,
+                    roseType: 'radius',
+                    itemStyle: {
+                        borderRadius: 5
+                    },
+                    label: {
+                        show: true,
+                        position: 'outside'
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        // 填充详细分析数据
+        function populateDetailedAnalysis() {
+            populateEmergingTrends();
+            populateKeyInsights();
+        }
+
+        // 填充新兴趋势
+        function populateEmergingTrends() {
+            const container = document.getElementById('emergingTrendsList');
+            const emerging = analysisData.emerging_trends || {};
+            const techTrends = analysisData.technical_trend_analysis || {};
+            
+            let html = '';
+            
+            // 新兴应用场景
+            const emergingScenarios = emerging.emerging_application_scenarios || {};
+            Object.entries(emergingScenarios).slice(0, 6).forEach(([scenario, data]) => {
+                html += `
+                    <div class="stat-item">
+                        <div class="stat-name">🚀 ${scenario}</div>
+                        <div class="stat-value">增长率: +${data.growth_rate}% | 近期论文: ${data.recent_papers}篇</div>
+                    </div>
+                `;
+            });
+            
+            // 新兴技术
+            const emergingTech = techTrends.emerging_technologies || {};
+            Object.entries(emergingTech).slice(0, 6).forEach(([tech, data]) => {
+                html += `
+                    <div class="stat-item">
+                        <div class="stat-name">⚡ ${tech}</div>
+                        <div class="stat-value">增长率: +${data.growth_rate}% | 近期论文: ${data.recent_papers}篇</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 填充关键洞察
+        function populateKeyInsights() {
+            const container = document.getElementById('keyInsightsList');
+            const basic = analysisData.basic_statistics || {};
+            const temporal = analysisData.temporal_analysis || {};
+            const quality = analysisData.quality_metrics || {};
+            const prediction = analysisData.prediction_insights || {};
+            
+            let html = `
+                <div class="stat-item">
+                    <div class="stat-name">📊 数据完整性</div>
+                    <div class="stat-value">质量评分: ${quality.data_quality_score?.toFixed(1) || 0}/100</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-name">📈 发展趋势</div>
+                    <div class="stat-value">峰值年份: ${temporal.peak_year || 'N/A'} (${temporal.peak_count?.toLocaleString() || 0}篇)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-name">🔮 2025年预测</div>
+                    <div class="stat-value">预计论文数: ${prediction.predicted_2025_papers?.toLocaleString() || 'N/A'}篇</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-name">🏛️ 顶级会议</div>
+                    <div class="stat-value">${analysisData.conference_analysis?.top_conferences?.slice(0,3).join(', ') || 'N/A'}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-name">🎯 分析覆盖</div>
+                    <div class="stat-value">场景分析: ${quality.analysis_coverage?.with_scenario_analysis?.toFixed(1) || 0}%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-name">📚 研究多样性</div>
+                    <div class="stat-value">多样性指数: ${analysisData.field_analysis?.field_diversity_index?.toFixed(3) || 0}</div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // 标签页切换
+        function switchTab(tabName) {
+            // 隐藏所有内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有按钮的激活状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 显示选中的内容
+            document.getElementById(tabName).classList.add('active');
+            
+            // 激活对应按钮
+            event.target.classList.add('active');
+            
+            // 重新调整图表大小
+            setTimeout(() => {
+                Object.values(charts).forEach(chart => {
+                    if (chart && chart.resize) {
+                        chart.resize();
+                    }
+                });
+            }, 100);
+        }
+
+        // 隐藏加载状态
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            document.getElementById('loadingIndicator').innerHTML = `
+                <div style="color: #e74c3c;">
+                    <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ 加载失败</div>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+
+        // 响应式处理
+        window.addEventListener('resize', function() {
+            Object.values(charts).forEach(chart => {
+                if (chart && chart.resize) {
+                    chart.resize();
+                }
+            });
+        });
+
+        // 页面可见性变化时重新调整
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                setTimeout(() => {
+                    Object.values(charts).forEach(chart => {
+                        if (chart && chart.resize) {
+                            chart.resize();
+                        }
+                    });
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
