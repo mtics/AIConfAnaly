@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.13
+  - python=3.9  # 降低版本以提高兼容性
   - requests
   - beautifulsoup4
   - pandas
@@ -20,3 +20,13 @@ dependencies:
     - plotly
     - selenium
     - webdriver-manager
+    # PDF processing
+    - PyPDF2
+    - pymupdf
+    - aiofiles
+    - aiohttp
+    # Vector database and embeddings
+    - pymilvus
+    - sentence-transformers
+    - torch
+    - transformers

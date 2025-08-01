@@ -2,15 +2,13 @@
 
 ## 📁 Optimized Final Project Structure
 
-### MCP Tools Integration
-All MCP-related tools are organized in the `mcp_tools/` directory for unified management:
-- **academic-search-mcp-server**: Academic search MCP server
-- **arxiv-latex-mcp**: arXiv LaTeX processing MCP
-- **claude-memory-mcp**: Claude memory MCP
-- **jupyter-notebook-mcp**: Jupyter data analysis MCP
-- **mcp-memory-keeper**: Memory keeper MCP
-- **mcp-memory-service**: Advanced memory service MCP
-- **paper-search-mcp**: Paper search MCP
+### 精简优化结果
+项目已完成重大精简和优化：
+- **删除了MCP工具目录** (节省2.6MB空间)
+- **合并了重复分析器** → 统一趋势分析器
+- **合并了重复生成器** → 统一仪表板生成器  
+- **统一了入口点** → main.py
+- **清理了空目录** 和临时文件
 
 ## 📁 Core Project Structure
 
@@ -55,19 +53,16 @@ ConfAnalysis/
 │   │   └── 📄 serve.py            #  服务接口
 │   └── 📁 docs/               #   项目文档
 │       └── 📄 README.md       #   详细文档
-├── 📁 tools/                  # 🔧 实用工具
+├── 📁 tools/                  # 🔧 精简工具集
+│   ├── 📁 analyzers/          #   统一分析器
+│   │   └── 📄 unified_trend_analyzer.py  #  合并的趋势分析器
+│   ├── 📁 generators/         #   统一生成器
+│   │   └── 📄 unified_dashboard_generator.py  #  合并的仪表板生成器
 │   ├── 📁 utilities/          #   助手工具
-│   │   ├── 📄 cleanup_project.py     #  项目清理工具
-│   │   ├── 📄 research_trends_analyzer.py  #  研究趋势分析器
-│   │   └── 📄 trend_analyzer.py      #  趋势分析器
-│   ├── 📁 data_generators/    #   数据生成器
-│   │   └── 📄 detailed_analysis_generator.py
-│   └── 📁 visualization_generators/  # 可视化生成器
-│       ├── 📄 generate_comprehensive_trends.py
-│       ├── 📄 generate_conference_trends_viz.py
-│       ├── 📄 generate_enhanced_visualization.py
-│       ├── 📄 generate_standalone_report.py
-│       └── 📄 generate_trend_visualization.py
+│   │   └── 📄 cleanup_project.py     #  项目清理工具
+│   └── 📁 data_generators/    #   数据生成器
+│       ├── 📄 comprehensive_insights_generator.py
+│       └── 📄 full_dataset_analyzer.py
 ├── 📁 frontend/               # 🎨 前端界面 (精简版)
 │   ├── 📄 index.html          #   主页
 │   ├── 📄 dashboard.html      #   基础仪表板
@@ -85,7 +80,7 @@ ConfAnalysis/
 │       ├── 📁 pdfs/          #   PDF文件
 │       └── 📁 extracted_text/ #  提取的文本
 ├── 📁 tests/                 # 🧪 测试文件 (预留)
-├── 📄 main_new.py            # 🚪 新主入口 ⭐
+├── 📄 main.py                # 🚪 统一主入口 ⭐
 ├── 📄 CLAUDE.md              # 📋 开发指南
 ├── 📄 README.md              # 📚 项目说明
 ├── 📄 PROJECT_STRUCTURE.md   # 📁 项目结构说明 (本文件)
@@ -113,11 +108,11 @@ ConfAnalysis/
 
 ### 基本分析
 ```bash
-# 运行完整分析
-python main_new.py
+# 运行完整分析（统一入口）
+python main.py
 
 # 查看结果
-# 浏览器打开: frontend/unified_analysis_report.html
+# 浏览器打开: frontend/unified_dashboard.html
 ```
 
 ### 高级功能

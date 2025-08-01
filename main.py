@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AI会议论文分析系统 - 主入口
+AI会议论文分析系统 - 统一主入口
 基于任务场景识别的智能分析系统
 """
 
@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 # 确保正确的导入路径
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from conf_analysis.core.analyzer import UnifiedAnalyzer
 

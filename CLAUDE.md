@@ -21,13 +21,25 @@ conda activate ConfAnalysis
 ### Main Commands
 ```bash
 # Full analysis pipeline (recommended)
-python main_new.py
+python main.py
 
 # Or using module approach
 python -m conf_analysis.main
 
 # Generate comprehensive dashboard
 python -c "from conf_analysis.main import main; main()"
+
+# Run unified trend analyzer
+python -c "from tools.analyzers.unified_trend_analyzer import UnifiedTrendAnalyzer; UnifiedTrendAnalyzer().run_comprehensive_analysis()"
+
+# Generate unified dashboard
+python -c "from tools.generators.unified_dashboard_generator import UnifiedDashboardGenerator; UnifiedDashboardGenerator().generate_all_dashboards()"
+
+# Run data generators from tools directory
+python -c "from tools.data_generators.comprehensive_insights_generator import ComprehensiveInsightsGenerator; ComprehensiveInsightsGenerator().run()"
+
+# Generate complete dataset analysis (all 53,159 papers)
+python tools/data_generators/full_dataset_analyzer.py
 ```
 
 ### Cleanup and Maintenance

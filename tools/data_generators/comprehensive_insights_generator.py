@@ -17,7 +17,9 @@ class ComprehensiveInsightsGenerator:
     
     def __init__(self, data_dir: str = "outputs"):
         """初始化生成器"""
-        self.data_dir = Path(data_dir)
+        # 调整路径以适应新的项目结构
+        project_root = Path(__file__).parent.parent.parent
+        self.data_dir = project_root / data_dir
         self.analysis_dir = self.data_dir / "analysis"
         self.enhanced_analysis = None
         self.existing_analysis = None

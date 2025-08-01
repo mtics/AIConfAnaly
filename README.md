@@ -24,14 +24,15 @@ ConfAnalysis/
 │   │   └── utils/         #   工具函数
 │   ├── docs/             #   项目文档
 │   └── __init__.py       #   包初始化
-├── tools/                 # 🔧 实用工具
+├── tools/                 # 🔧 精简工具集
+│   ├── analyzers/         #   统一分析器
+│   ├── generators/        #   统一生成器
 │   ├── utilities/         #   助手工具
-│   ├── data_generators/   #   数据生成器
-│   └── visualization_generators/  # 可视化生成器
-├── frontend/             # 🎨 前端界面 (精简版)
+│   └── data_generators/   #   数据生成器
+├── frontend/             # 🎨 前端界面
 ├── outputs/              # 📊 分析结果
 ├── tests/               # 🧪 测试文件
-├── main_new.py          # 🚪 新主入口
+├── main.py              # 🚪 统一主入口
 └── CLAUDE.md            # 📋 开发指南
 ```
 
@@ -39,13 +40,18 @@ ConfAnalysis/
 
 ### 安装依赖
 ```bash
+# 使用pip安装
 pip install -r requirements.txt
+
+# 或使用conda
+conda env create -f environment.yml
+conda activate ConfAnalysis
 ```
 
 ### 运行分析
 ```bash
-# 推荐方式：使用新的主入口
-python main_new.py
+# 统一主入口（推荐）
+python main.py
 
 # 或者使用模块方式
 python -m conf_analysis.main
@@ -53,8 +59,8 @@ python -m conf_analysis.main
 
 ### 查看结果
 ```bash
-# 打开综合分析报告
-# frontend/comprehensive_report.html
+# 打开生成的统一分析报告
+# frontend/unified_dashboard.html
 ```
 
 ## 🎯 主要改进
@@ -98,17 +104,11 @@ python -m conf_analysis.main
 - ❌ 冗余的文档文件 (各种SUMMARY.md)
 - ❌ 重复的前端文件 (trend_visualization*.html等)
 
-⚠️ **仍需手动删除的目录** (与项目无关的MCP项目):
-```
-📁 可选删除 (不影响项目运行):
-├── arxiv-latex-mcp/
-├── claude-code-mcp/
-├── claude-memory-mcp/
-├── jupyter-notebook-mcp/
-├── mcp-memory-keeper/
-├── mcp-memory-service/
-└── paper-search-mcp/
-```
+✅ **已完成精简清理**:
+- ❌ 删除了冗余的MCP工具目录 (节省2.6MB空间)
+- ❌ 删除了重复的趋势分析器 (合并为统一分析器)
+- ❌ 删除了重复的仪表板生成器 (合并为统一生成器)
+- ❌ 删除了空目录结构和临时文件
 
 ## 🔧 开发指南
 
@@ -141,19 +141,19 @@ python src/analyzer.py  # 旧分析器
 
 新的使用方式：
 ```bash
-python main_new.py      # 新主入口  
+python main.py          # 统一主入口  
 python -m conf_analysis.main  # 模块方式
 ```
 
 ### 目录对应关系
 ```
 旧结构 → 新结构
-├── main.py → main_new.py
-├── src/ → conf_analysis/core/
-├── code/ → conf_analysis/core/
-├── generate_*.py → tools/visualization_generators/
-├── *_analyzer.py → tools/utilities/
-└── frontend/ → frontend/ (精简版)
+├── main_new.py → main.py (统一入口)
+├── 重复分析器 → tools/analyzers/unified_trend_analyzer.py
+├── 重复生成器 → tools/generators/unified_dashboard_generator.py
+├── mcp_tools/ → 已删除 (节省2.6MB)
+├── 空目录 → 已清理
+└── frontend/ → frontend/ (保留核心功能)
 ```
 
 ---
