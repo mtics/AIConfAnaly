@@ -21,12 +21,26 @@ class BaseScraper(ABC):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
         
-    def fetch_page(self, url: str, delay: float = 1.0) -> BeautifulSoup:
-        """Fetch and parse a web page"""
+    def fetch_page(self, url: str, delay: float = 1.0, retries: int = 3) -> BeautifulSoup:
+        """Fetch and parse a web page with retry mechanism"""
         time.sleep(delay)  # Rate limiting
-        response = self.session.get(url)
-        response.raise_for_status()
-        return BeautifulSoup(response.content, 'html.parser')
+        
+        for attempt in range(retries):
+            try:
+                response = self.session.get(url, timeout=15)
+                response.raise_for_status()
+                return BeautifulSoup(response.content, 'html.parser')
+                
+            except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
+                if attempt < retries - 1:
+                    wait_time = delay * (2 ** attempt)  # Exponential backoff
+                    print(f"   Retry {attempt + 1}/{retries} in {wait_time:.1f}s due to: {e}")
+                    time.sleep(wait_time)
+                else:
+                    print(f"   Failed after {retries} attempts: {e}")
+                    raise
+        
+        return None
     
     @abstractmethod
     def get_papers_for_year(self, year: int) -> List[Dict]:

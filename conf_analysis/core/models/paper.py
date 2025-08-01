@@ -204,6 +204,16 @@ class Paper:
         
         self.updated_at = datetime.now()
     
+    def set_text_vector(self, embedding: np.ndarray) -> None:
+        """设置文本向量"""
+        self.text_embedding = embedding
+        self.updated_at = datetime.now()
+    
+    def set_semantic_vector(self, embedding: np.ndarray) -> None:
+        """设置语义向量"""
+        self.semantic_embedding = embedding
+        self.updated_at = datetime.now()
+    
     def add_text_embedding(self, embedding: np.ndarray, embedding_type: str = 'text') -> None:
         """添加文本向量表示"""
         if embedding_type == 'text':
@@ -212,6 +222,66 @@ class Paper:
             self.semantic_embedding = embedding
         else:
             raise ValueError(f"Unknown embedding type: {embedding_type}")
+        
+        self.updated_at = datetime.now()
+    
+    def analyze_task_scenario(self) -> None:
+        """分析任务场景（简化版本）"""
+        if not self.title or not self.abstract:
+            return
+        
+        # 基于标题和摘要的简单任务场景分析
+        text = (self.title + " " + self.abstract).lower()
+        
+        # 检测应用场景
+        scenario_keywords = {
+            "Medical Diagnosis": ["medical", "diagnosis", "healthcare", "disease", "patient", "clinical"],
+            "Autonomous Driving": ["autonomous", "driving", "vehicle", "traffic", "navigation", "road"],
+            "Financial Technology": ["financial", "trading", "market", "investment", "risk", "banking"],
+            "Computer Vision": ["vision", "image", "visual", "detection", "recognition", "segmentation"],
+            "Natural Language Processing": ["language", "text", "nlp", "translation", "sentiment", "embedding"],
+            "General Research": ["research", "method", "algorithm", "approach", "framework", "model"]
+        }
+        
+        # 检测任务类型
+        task_keywords = {
+            "Classification Tasks": ["classification", "classify", "categorization", "category"],
+            "Prediction Tasks": ["prediction", "predict", "forecasting", "forecast"],
+            "Generation Tasks": ["generation", "generate", "synthesis", "create"],
+            "Optimization Tasks": ["optimization", "optimize", "minimize", "maximize"],
+        }
+        
+        # 找到最匹配的场景
+        best_scenario = "General Research"
+        best_score = 0
+        for scenario, keywords in scenario_keywords.items():
+            score = sum(1 for keyword in keywords if keyword in text)
+            if score > best_score:
+                best_score = score
+                best_scenario = scenario
+        
+        # 找到最匹配的任务类型
+        best_task = "Other Tasks"
+        best_task_score = 0
+        for task_type, keywords in task_keywords.items():
+            score = sum(1 for keyword in keywords if keyword in text)
+            if score > best_task_score:
+                best_task_score = score
+                best_task = task_type
+        
+        # 创建任务场景分析结果
+        self.task_scenario_analysis = TaskScenarioAnalysis(
+            application_scenario=best_scenario,
+            scenario_confidence=min(best_score / 3.0, 1.0),
+            task_type=best_task,
+            task_confidence=min(best_task_score / 2.0, 1.0),
+            task_objectives=[],
+            scenario_keywords=[],
+            task_keywords=[],
+            real_world_impact="",
+            target_users=[],
+            social_value=""
+        )
         
         self.updated_at = datetime.now()
     
@@ -349,10 +419,8 @@ class Paper:
             # 如果没有向量，创建零向量占位
             data['text_vector'] = [0.0] * 768  # 假设使用768维向量
         
-        if self.semantic_embedding is not None:
-            data['semantic_vector'] = self.semantic_embedding.tolist()
-        else:
-            data['semantic_vector'] = [0.0] * 768
+        # 注意: 为了兼容Milvus v2.3.3的单向量字段限制，暂时移除semantic_vector
+        # 可以在后续版本中通过升级Milvus或使用多集合方案来支持多向量
         
         return data
     

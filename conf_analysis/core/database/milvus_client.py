@@ -82,10 +82,12 @@ class MilvusClient:
         self.connected = False
         
         # 连接到Milvus
-        self.connect()
+        if not self.connect():
+            raise Exception(f"Failed to connect to Milvus server at {self.config.host}:{self.config.port}")
         
         # 初始化集合
-        self.initialize_collection()
+        if not self.initialize_collection():
+            raise Exception("Failed to initialize Milvus collection")
     
     def connect(self) -> bool:
         """
@@ -599,6 +601,95 @@ class MilvusClient:
         else:
             return ""  # 无过滤条件
     
+    def get_existing_paper_ids(self, conferences: List[str] = None, years: List[int] = None) -> set:
+        """
+        获取数据库中已存在的论文ID集合
+        
+        Args:
+            conferences: 限制的会议列表
+            years: 限制的年份列表
+            
+        Returns:
+            set: 已存在的论文ID集合
+        """
+        if not self.collection:
+            return set()
+        
+        try:
+            # 构建查询条件
+            filter_conditions = []
+            
+            if conferences:
+                conf_condition = " or ".join([f'conference == "{conf}"' for conf in conferences])
+                filter_conditions.append(f"({conf_condition})")
+            
+            if years:
+                year_condition = " or ".join([f'year == {year}' for year in years])
+                filter_conditions.append(f"({year_condition})")
+            
+            # 组合查询条件
+            filter_expr = " and ".join(filter_conditions) if filter_conditions else None
+            
+            # 查询所有论文ID
+            results = self.collection.query(
+                expr=filter_expr,
+                output_fields=["paper_id"],
+                limit=16384  # Milvus默认最大限制
+            )
+            
+            # 提取论文ID
+            existing_ids = {result["paper_id"] for result in results}
+            
+            logger.info(f"Found {len(existing_ids)} existing papers in database")
+            return existing_ids
+            
+        except Exception as e:
+            logger.error(f"Failed to get existing paper IDs: {e}")
+            return set()
+    
+    def check_papers_exist(self, paper_ids: List[str]) -> Dict[str, bool]:
+        """
+        检查论文是否已存在于数据库中
+        
+        Args:
+            paper_ids: 要检查的论文ID列表
+            
+        Returns:
+            Dict[str, bool]: 论文ID -> 是否存在的映射
+        """
+        if not self.collection or not paper_ids:
+            return {}
+        
+        try:
+            # 分批查询（避免查询条件过长）
+            batch_size = 100
+            existence_map = {}
+            
+            for i in range(0, len(paper_ids), batch_size):
+                batch_ids = paper_ids[i:i + batch_size]
+                
+                # 构建查询条件
+                id_conditions = [f'paper_id == "{pid}"' for pid in batch_ids]
+                filter_expr = " or ".join(id_conditions)
+                
+                # 查询存在的论文
+                results = self.collection.query(
+                    expr=filter_expr,
+                    output_fields=["paper_id"],
+                    limit=len(batch_ids)
+                )
+                
+                # 构建存在性映射
+                existing_ids = {result["paper_id"] for result in results}
+                for pid in batch_ids:
+                    existence_map[pid] = pid in existing_ids
+            
+            return existence_map
+            
+        except Exception as e:
+            logger.error(f"Failed to check paper existence: {e}")
+            return {pid: False for pid in paper_ids}
+
     def get_collection_info(self) -> Dict[str, Any]:
         """
         获取集合信息
@@ -626,9 +717,18 @@ class MilvusClient:
                 }
             }
             
-            # 统计信息
-            stats = self.collection.get_stats()
-            info["statistics"] = stats
+            # 统计信息 - 使用兼容的方法获取
+            try:
+                # 尝试获取集合统计信息
+                stats = {
+                    "row_count": self.collection.num_entities,
+                    "collection_name": self.collection.name,
+                    "description": self.collection.description
+                }
+                info["statistics"] = stats
+            except Exception as e:
+                logger.warning(f"Could not get collection statistics: {e}")
+                info["statistics"] = {"row_count": "unknown"}
             
             # 索引信息
             info["indexes"] = []

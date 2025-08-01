@@ -6,7 +6,6 @@ Consolidated utilities for configuration, PDF management, text processing, and v
 from .config import *
 from .pdf_manager import PDFDownloader, PDFManager
 from .text_processor import TextExtractor, TextChunker, VectorizationPipeline
-from .vector_database import VectorDatabase
 from .system_setup import *
 
 __all__ = [
@@ -20,7 +19,4 @@ __all__ = [
     
     # Text Processing
     'TextExtractor', 'TextChunker', 'VectorizationPipeline',
-    
-    # Vector Database
-    'VectorDatabase',
 ]

@@ -57,8 +57,8 @@ class UnifiedDashboardGenerator:
         # 生成HTML
         html_content = self.create_research_dashboard_html(dashboard_data)
         
-        # 保存文件
-        output_file = self.frontend_dir / "research_dashboard.html"
+        # 保存文件到outputs目录
+        output_file = self.output_dir / "research_dashboard.html"
         self._save_dashboard(html_content, output_file)
         
         return str(output_file)
@@ -89,8 +89,8 @@ class UnifiedDashboardGenerator:
         # 生成HTML
         html_content = self.create_comprehensive_trends_html(trends_data)
         
-        # 保存文件
-        output_file = self.frontend_dir / "comprehensive_trends.html"
+        # 保存文件到outputs目录
+        output_file = self.output_dir / "comprehensive_trends.html"
         self._save_dashboard(html_content, output_file)
         
         return str(output_file)
@@ -126,8 +126,8 @@ class UnifiedDashboardGenerator:
         # 生成统一HTML
         html_content = self.create_unified_dashboard_html(unified_data)
         
-        # 保存文件
-        output_file = self.frontend_dir / "unified_dashboard.html"
+        # 保存文件到outputs目录
+        output_file = self.output_dir / "unified_dashboard.html"
         self._save_dashboard(html_content, output_file)
         
         return str(output_file)

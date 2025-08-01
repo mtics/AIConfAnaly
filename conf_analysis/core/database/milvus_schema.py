@@ -239,13 +239,6 @@ class MilvusSchema:
                 dim=self.vector_dim,
                 description="文本向量表示（标题+摘要）"
             ),
-            
-            FieldSchema(
-                name="semantic_vector", 
-                dtype=DataType.FLOAT_VECTOR, 
-                dim=self.vector_dim,
-                description="语义向量表示（任务+场景）"
-            ),
         ]
         
         # 创建schema
@@ -275,13 +268,6 @@ class MilvusSchema:
                 "description": "文本向量索引，用于语义相似性搜索"
             },
             
-            "semantic_vector_index": {
-                "field_name": "semantic_vector", 
-                "index_type": "IVF_FLAT",
-                "metric_type": "COSINE",
-                "params": {"nlist": 1024},
-                "description": "语义向量索引，用于任务场景相似性搜索"
-            },
             
             # 标量索引 - 用于过滤和排序
             "conference_index": {
@@ -340,11 +326,6 @@ class MilvusSchema:
                     "description": "文本语义搜索参数"
                 },
                 
-                "semantic_vector": {
-                    "metric_type": "COSINE", 
-                    "params": {"nprobe": 32},
-                    "description": "任务场景搜索参数"
-                }
             },
             
             # 混合搜索参数
@@ -479,7 +460,6 @@ class MilvusSchema:
             
             # 向量映射
             'text_embedding': 'text_vector',
-            'semantic_embedding': 'semantic_vector',
         }
         
         return mapping

@@ -16,6 +16,5 @@ __version__ = "2.0.0"
 __author__ = "Conference Analysis Team"
 
 from .core.analyzer import UnifiedAnalyzer
-from .main import main
 
-__all__ = ["UnifiedAnalyzer", "main"]
+__all__ = ["UnifiedAnalyzer"]

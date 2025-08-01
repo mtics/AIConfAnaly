@@ -6,23 +6,23 @@ Configuration file for conference paper analysis project
 CONFERENCES = {
     'ICML': {
         'base_url': 'https://proceedings.mlr.press/',
-        'years': [2020, 2021, 2022, 2023, 2024]
+        'years': [2020, 2021, 2022, 2023, 2024, 2025]
     },
     'NeuRIPS': {
         'base_url': 'https://papers.nips.cc/',
-        'years': [2020, 2021, 2022, 2023, 2024]
+        'years': [2020, 2021, 2022, 2023, 2024, 2025]
     },
     'ICLR': {
         'base_url': 'https://openreview.net/',
-        'years': [2020, 2021, 2022, 2023, 2024]
+        'years': [2020, 2021, 2022, 2023, 2024, 2025]
     },
     'AAAI': {
         'base_url': 'https://aaai.org/',
-        'years': [2020, 2021, 2022, 2023, 2024]
+        'years': [2020, 2021, 2022, 2023, 2024, 2025]
     },
     'IJCAI': {
         'base_url': 'https://www.ijcai.org/',
-        'years': [2020, 2021, 2022, 2023, 2024]
+        'years': [2020, 2021, 2022, 2023, 2024, 2025]
     }
 }
 
@@ -52,9 +52,9 @@ DPI = 300
 COLOR_PALETTE = 'viridis'
 
 # PDF Download settings
-PDF_DOWNLOAD_DELAY = 1.0  # Delay between downloads in seconds
-MAX_CONCURRENT_DOWNLOADS = 3
-PDF_DOWNLOAD_TIMEOUT = 30  # Timeout for each download
+PDF_DOWNLOAD_DELAY = 2.0  # Delay between downloads in seconds (increased for better politeness)
+MAX_CONCURRENT_DOWNLOADS = 2  # Reduced concurrency to avoid triggering bot detection
+PDF_DOWNLOAD_TIMEOUT = 45  # Increased timeout for Cloudflare challenges
 MAX_RETRIES = 3
 CHUNK_SIZE = 8192
 

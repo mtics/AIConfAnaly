@@ -33,31 +33,48 @@ logger = logging.getLogger(__name__)
 
 
 class PDFDownloader:
-    def __init__(self):
+    def __init__(self, force_download_blocked=False):
         self.session = None
         self.downloaded_count = 0
         self.failed_count = 0
         self.skipped_count = 0
+        self.force_download_blocked = force_download_blocked  # Allow forcing downloads even from blocked domains
         self.session_timeout = aiohttp.ClientTimeout(total=PDF_DOWNLOAD_TIMEOUT)
         
-        # Headers to mimic a real browser
+        # Enhanced headers to better mimic modern browsers and avoid bot detection
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'Cache-Control': 'max-age=0',
         }
 
     async def __aenter__(self):
         """Async context manager entry"""
-        connector = aiohttp.TCPConnector(limit=MAX_CONCURRENT_DOWNLOADS)
+        # Create cookie jar for session persistence
+        jar = aiohttp.CookieJar(unsafe=True)
+        connector = aiohttp.TCPConnector(
+            limit=MAX_CONCURRENT_DOWNLOADS,
+            limit_per_host=1,  # Only 1 connection per host to be more polite
+            ttl_dns_cache=300,
+            use_dns_cache=True
+        )
         self.session = aiohttp.ClientSession(
             connector=connector,
             timeout=self.session_timeout,
-            headers=self.headers
+            headers=self.headers,
+            cookie_jar=jar
         )
         return self
 
@@ -126,18 +143,36 @@ class PDFDownloader:
                         else:
                             pdf_links.append(urljoin(base_url, href))
                 
-                # AAAI specific: look for PDF links in the format /view/{articleId}/{fileId}
+                # AAAI specific: look for PDF links in multiple patterns
                 if 'ojs.aaai.org' in base_url:
                     for link in soup.find_all('a', href=True):
                         href = link.get('href')
                         text = link.get_text().strip().lower()
                         
-                        # Look for PDF text and proper AAAI PDF URL pattern
-                        if 'pdf' in text and '/view/' in href and href.count('/') >= 2:
+                        # Look for various AAAI PDF patterns
+                        if ('pdf' in text or 'download' in text) and (
+                            '/download/' in href or 
+                            '/view/' in href or
+                            'pdf' in href.lower()
+                        ):
                             # Make URL absolute
                             if href.startswith('/'):
                                 pdf_url = 'https://ojs.aaai.org' + href
                                 pdf_links.append(pdf_url)
+                            elif href.startswith('http'):
+                                pdf_links.append(href)
+                    
+                    # Also try common AAAI PDF URL patterns by ID extraction
+                    if '/article/view/' in base_url:
+                        match = re.search(r'/article/view/(\d+)', base_url)
+                        if match:
+                            article_id = match.group(1)
+                            # Try common PDF download patterns
+                            potential_urls = [
+                                f'https://ojs.aaai.org/index.php/AAAI/article/download/{article_id}',
+                                f'https://ojs.aaai.org/index.php/AAAI/article/viewFile/{article_id}',
+                            ]
+                            pdf_links.extend(potential_urls)
                 
                 return list(set(pdf_links))  # Remove duplicates
                 
@@ -145,20 +180,110 @@ class PDFDownloader:
             logger.error(f"Error extracting PDF links from {url}: {e}")
             return []
 
+    def get_direct_pdf_url(self, url: str) -> str:
+        """Convert paper page URL to direct PDF URL for known conferences"""
+        if 'ojs.aaai.org' in url and '/article/view/' in url:
+            # For AAAI, try multiple PDF URL patterns
+            # Pattern: https://ojs.aaai.org/index.php/AAAI/article/view/27749
+            # Common patterns:
+            # 1. /download/ID/pdf-file-id  
+            # 2. /download/ID
+            # For now, try the HTML parsing approach instead
+            return url
+        elif 'aaai.org/papers/' in url:
+            # For new AAAI paper format, try direct PDF patterns
+            # Pattern: https://aaai.org/papers/00003-title/
+            # Try: https://aaai.org/papers/00003-title/pdf or https://aaai.org/papers/00003-title.pdf
+            if not url.endswith('/'):
+                url += '/'
+            potential_urls = [
+                url + 'pdf',
+                url.rstrip('/') + '.pdf',
+                url + 'download'
+            ]
+            # Return the first potential URL for now
+            return potential_urls[0]
+        elif 'openreview.net/forum' in url:
+            # For ICLR (OpenReview), try to get PDF
+            # Pattern: https://openreview.net/forum?id=rhgIgTSSxW
+            # To: https://openreview.net/pdf?id=rhgIgTSSxW
+            pdf_url = url.replace('/forum?', '/pdf?')
+            return pdf_url
+        elif 'proceedings.mlr.press' in url:
+            # For ICML, try to get PDF
+            # Pattern: https://proceedings.mlr.press/v235/abad-rocamora24a.html
+            # To: https://proceedings.mlr.press/v235/abad-rocamora24a/abad-rocamora24a.pdf
+            if url.endswith('.html'):
+                # Handle malformed URLs with duplicate paths
+                if url.count('https://proceedings.mlr.press') > 1:
+                    # Extract the correct URL part
+                    parts = url.split('https://proceedings.mlr.press')
+                    if len(parts) > 2:
+                        url = 'https://proceedings.mlr.press' + parts[-1]
+                
+                base_url = url[:-5]  # Remove .html
+                paper_name = base_url.split('/')[-1]
+                pdf_url = f"{base_url}/{paper_name}.pdf"
+                return pdf_url
+        elif 'papers.nips.cc' in url:
+            # For NeurIPS, extract PDF URL
+            # Pattern: https://papers.nips.cc/paper_files/paper/2024/hash/000f947dcaff8fbffcc3f53a1314f358-Abstract-Conference.html
+            # To: https://papers.nips.cc/paper_files/paper/2024/file/000f947dcaff8fbffcc3f53a1314f358-Paper-Conference.pdf
+            if '-Abstract-Conference.html' in url:
+                pdf_url = url.replace('-Abstract-Conference.html', '-Paper-Conference.pdf').replace('/hash/', '/file/')
+                return pdf_url
+        
+        # Return original URL if no conversion pattern matches
+        return url
+
+    def get_domain_specific_delay(self, url: str) -> float:
+        """Get appropriate delay for specific domains"""
+        if 'aaai.org' in url:
+            return PDF_DOWNLOAD_DELAY * 2  # Double delay for AAAI (Cloudflare protected)
+        elif 'openreview.net' in url:
+            return PDF_DOWNLOAD_DELAY * 0.5  # Faster for OpenReview
+        else:
+            return PDF_DOWNLOAD_DELAY
+
     async def download_pdf(self, url: str, filepath: Path, semaphore: asyncio.Semaphore, 
                           max_retries: int = MAX_RETRIES) -> bool:
         """Download a single PDF with retry logic"""
         async with semaphore:
+            # Try direct PDF URL conversion first
+            direct_pdf_url = self.get_direct_pdf_url(url)
+            if direct_pdf_url != url:
+                logger.info(f"Converted URL: {url} -> {direct_pdf_url}")
+                url = direct_pdf_url
+            
+            # Get domain-specific delay
+            domain_delay = self.get_domain_specific_delay(url)
+            
             for attempt in range(max_retries):
                 try:
-                    # Add delay between requests
+                    # Add delay between requests (use domain-specific delay)
                     if attempt > 0:
-                        await asyncio.sleep(PDF_DOWNLOAD_DELAY * (attempt + 1))
+                        await asyncio.sleep(domain_delay * (attempt + 1))
+                    else:
+                        # Even first attempt should have some delay for AAAI
+                        if 'aaai.org' in url:
+                            await asyncio.sleep(domain_delay)
                     
                     async with self.session.get(url) as response:
                         if response.status == 200:
-                            # Check if content is actually a PDF
+                            # Check if this is a Cloudflare challenge page
                             content_type = response.headers.get('content-type', '').lower()
+                            if 'text/html' in content_type:
+                                text_sample = await response.text()
+                                if any(indicator in text_sample.lower() for indicator in [
+                                    'just a moment', 'checking your browser', 'cloudflare', 
+                                    'challenge', 'verify you are human'
+                                ]):
+                                    logger.warning(f"Cloudflare challenge detected for {url}")
+                                    # Wait longer and try again on next retry
+                                    await asyncio.sleep(5)
+                                    continue
+                            
+                            # Check if content is actually a PDF
                             if 'pdf' not in content_type and 'application/octet-stream' not in content_type:
                                 # Try to extract PDF links from HTML page
                                 pdf_links = await self.extract_pdf_links_from_html(url)
@@ -200,9 +325,9 @@ class PDFDownloader:
                 except Exception as e:
                     logger.error(f"Error downloading {url} (attempt {attempt + 1}): {e}")
                 
-                # Wait before retry
+                # Wait before retry (use domain-specific delay)
                 if attempt < max_retries - 1:
-                    await asyncio.sleep(PDF_DOWNLOAD_DELAY * 2)
+                    await asyncio.sleep(domain_delay * 2)
             
             self.failed_count += 1
             logger.error(f"Failed to download after {max_retries} attempts: {url}")
@@ -214,11 +339,18 @@ class PDFDownloader:
         if not papers:
             return {'downloaded': 0, 'failed': 0, 'skipped': 0}
         
+        # Check if this conference has known blocking issues
+        if not self.force_download_blocked and conference == 'AAAI' and any('aaai.org/papers/' in paper.get('url', '') for paper in papers):
+            logger.warning(f"AAAI {year} papers are protected by Cloudflare. Skipping batch to avoid 403 errors.")
+            logger.info(f"Consider downloading AAAI papers manually or using a different method.")
+            logger.info(f"To force download attempt, set force_download_blocked=True when creating PDFDownloader")
+            return {'downloaded': 0, 'failed': 0, 'skipped': len(papers)}
+        
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_DOWNLOADS)
         tasks = []
         
         for paper in papers:
-            pdf_url = paper.get('pdf_url')
+            pdf_url = paper.get('pdf_url') or paper.get('url')
             title = paper.get('title', 'Unknown')
             
             if not pdf_url:

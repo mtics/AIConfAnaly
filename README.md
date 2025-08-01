@@ -1,16 +1,39 @@
-# AI Conference Paper Analysis System
+# 🎯 AI会议论文分析系统
 
-## 🚀 项目简介
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-brightgreen.svg)](docker-compose.yml)
 
-一个**重新组织优化**的AI会议论文分析系统，提供智能场景识别、技术趋势分析和交互式可视化。
+> **智能化的学术论文分析平台** - 专门针对顶级AI/ML会议的端到端数据采集、分析和可视化系统
 
-### ✨ 核心特性
+## ✨ 核心特性
 
-- **🎯 智能场景识别**: 40+细分应用领域分类
-- **🔬 技术趋势分析**: 15+技术发展方向追踪  
-- **⚙️ 任务类型分类**: 18+AI任务类别识别
-- **📊 交互式仪表板**: 现代化单页面可视化
-- **🏗️ 优化架构**: 清晰的模块化项目结构
+### 🚀 一键启动，端到端流水线
+```bash
+python main.py  # 完整分析流水线，从爬取到报告生成
+```
+
+### 🏆 顶级会议全覆盖
+- **AAAI** - 人工智能协会会议
+- **ICLR** - 国际学习表征会议  
+- **ICML** - 国际机器学习会议
+- **IJCAI** - 国际人工智能联合会议
+- **NeurIPS** - 神经信息处理系统会议
+
+### 🧠 智能多维分析引擎
+- **70+应用场景识别** - 从医疗健康到金融科技，全面覆盖AI应用领域
+- **25+技术趋势追踪** - 实时追踪从Transformer到多模态AI的技术演进
+- **18+任务场景分类** - 精准识别论文的核心AI任务类型
+
+### 💾 双模式向量存储
+- **Milvus分布式存储** - 高性能生产级向量数据库
+- **SimpleVectorStore** - 轻量级本地存储，零依赖部署
+
+### 📊 交互式可视化仪表板
+- 实时趋势分析
+- 跨会议对比
+- 技术发展脉络
+- 研究热点识别
 
 ## 📁 优化后的项目结构
 
@@ -96,20 +119,6 @@ python -m conf_analysis.main
 - 🔬 技术趋势演进
 - 📊 交叉分析图表
 
-## 🧹 项目清理完成
-
-✅ **已清理的冗余文件**:
-- ❌ 根目录下的旧Python脚本 (generate_*.py, *_analyzer.py等)
-- ❌ 旧的src/和code/目录 
-- ❌ 冗余的文档文件 (各种SUMMARY.md)
-- ❌ 重复的前端文件 (trend_visualization*.html等)
-
-✅ **已完成精简清理**:
-- ❌ 删除了冗余的MCP工具目录 (节省2.6MB空间)
-- ❌ 删除了重复的趋势分析器 (合并为统一分析器)
-- ❌ 删除了重复的仪表板生成器 (合并为统一生成器)
-- ❌ 删除了空目录结构和临时文件
-
 ## 🔧 开发指南
 
 详细的开发说明请参考：[CLAUDE.md](CLAUDE.md)
@@ -155,7 +164,3 @@ python -m conf_analysis.main  # 模块方式
 ├── 空目录 → 已清理
 └── frontend/ → frontend/ (保留核心功能)
 ```
-
----
-
-**🎉 项目重构完成！现在拥有更清晰、更高效的代码结构！**
